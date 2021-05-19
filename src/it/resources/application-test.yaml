@@ -1,0 +1,22 @@
+spring:
+  zipkin:
+    enabled: false
+
+data-platform:
+  kafka:
+    bootstrap: localhost:9092
+    topic-properties:
+      creation:
+        num-partitions: 1
+        replication-factor: 1
+    ssl:
+      enabled: false
+      
+audit:
+  kafka:
+    bootstrap: localhost:9092
+    topic: audit-events
+    schema-registry-url: http://localhost:8081
+    ssl:
+      enabled: false
+      

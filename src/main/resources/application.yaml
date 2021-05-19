@@ -1,0 +1,109 @@
+spring:
+  application:
+    name: user-settings-service-api
+  mvc:
+    throw-exception-if-no-handler-found: true
+  zipkin:
+    baseUrl: http://zipkin.istio-system.svc:9411
+    sender:
+      type: web
+  sleuth:
+    opentracing:
+      enabled: true
+    baggage:
+      correlation-enabled: true
+      remote-fields: x-request-id, x-access-token
+      correlation-fields: x-request-id
+  web:
+    resources:
+      add-mappings: false
+
+springdoc:
+  swagger-ui:
+    path: /openapi
+    csrf:
+      enabled: true
+
+openapi:
+  request:
+    headers:
+      - X-Access-Token
+  response:
+    codes:
+      get-by-id: 200, 401, 403, 500, 501
+      put: 200, 400, 401, 403, 422, 500, 501
+
+management:
+  endpoints:
+    enabled-by-default: false
+    web:
+      exposure:
+        include: "*"
+    jmx:
+      exposure:
+        exclude: "*"
+  endpoint:
+    health:
+      enabled: true
+      show-details: always
+      group:
+        liveness:
+          include: livenessState, livenessResponseCheck
+        readiness:
+          include: readinessState, kafka
+    loggers:
+      enabled: true
+    prometheus:
+      enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+
+probes:
+  liveness:
+    failureThreshold: 10
+
+platform:
+  security:
+    enabled: true
+    whitelist:
+      - /openapi
+      - /v3/api-docs/**
+      - /swagger-ui/**
+      - /actuator/**
+
+logbook:
+  exclude:
+    - /openapi
+    - /v3/api-docs/**
+    - /swagger-ui/**
+    - /actuator/**
+
+data-platform:
+  kafka:
+    producer:
+      enabled: true
+    consumer:
+      enabled: true
+      group-id: user-settings-service-api
+      trusted-packages:
+        - com.epam.digital.data.platform.model.core.kafka
+        - com.epam.digital.data.platform.settings.model.dto
+    request-reply:
+      enabled: true
+      topics:
+        read-settings:
+          request: read-settings-inbound
+          reply: read-settings-outbound
+        update-settings:
+          request: update-settings-inbound
+          reply: update-settings-outbound
+        read-settings-by-keycloak-id:
+          request: read-settings-by-keycloak-id-inbound
+          reply: read-settings-by-keycloak-id-outbound
+    topic-properties:
+      creation:
+        enabled: true
+        enabled-dlq: true
