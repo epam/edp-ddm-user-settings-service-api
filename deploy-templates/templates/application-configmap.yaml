@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: user-settings-service-api-properties
+data:
+  config.yaml: |-
+    server.max-http-header-size: 16KB
+    data-platform:
+      kafka:
+        bootstrap: {{ .Values.kafka.service }}
+
+    audit:
+      kafka:
+        bootstrap: {{ .Values.kafka.service }}
+        topic: {{ .Values.audit.kafka.topic }}
+        schema-registry-url: {{ .Values.audit.kafka.schemaRegistryUrl }}

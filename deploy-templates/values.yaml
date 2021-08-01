@@ -1,0 +1,35 @@
+name: user-settings-service-api
+
+version: 1.1.0
+
+port: 8080
+
+service:
+  port: 8080
+
+ingress:
+  required: true
+  site: settings-api
+
+kafka:
+  service: kafka-cluster-kafka-bootstrap:9092
+
+image:
+  name: user-settings-service-api
+  version: latest
+
+monitoring:
+  namespace: openshift-monitoring
+  prometheusScrapePath: /actuator/prometheus
+  jobLabel: app
+
+probes:
+  liveness:
+    path: /actuator/health/liveness
+  readiness:
+    path: /actuator/health/readiness
+
+audit:
+  kafka:
+    topic: audit-events
+    schemaRegistryUrl: http://kafka-schema-registry:8081
