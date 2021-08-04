@@ -5,16 +5,16 @@
 
 	<groupId>com.epam.digital.data.platform</groupId>
 	<artifactId>user-settings-service-api</artifactId>
-	<version>1.3.0-SNAPSHOT</version>
+	<version>1.4.0-SNAPSHOT</version>
 
 	<name>user-settings-service-api</name>
 	<description>user-settings-service-api</description>
 
 	<properties>
-		<model.version>1.3.0-SNAPSHOT</model.version>
-		<model.core.version>1.3.0-SNAPSHOT</model.core.version>
+		<model.version>1.4.0-SNAPSHOT</model.version>
+		<model.core.version>1.4.0-SNAPSHOT</model.core.version>
+		<ddm.starter.rest.api.version>1.4.0-SNAPSHOT</ddm.starter.rest.api.version>
 		<ddm.starter.logger.version>1.3.0-SNAPSHOT</ddm.starter.logger.version>
-		<ddm.starter.rest.api.version>1.3.0-SNAPSHOT</ddm.starter.rest.api.version>
 		<ddm.starter.actuator.version>1.3.0-SNAPSHOT</ddm.starter.actuator.version>
 		<ddm.starter.swagger.version>1.3.0-SNAPSHOT</ddm.starter.swagger.version>
 		<ddm.starter.audit.version>1.3.0-SNAPSHOT</ddm.starter.audit.version>
