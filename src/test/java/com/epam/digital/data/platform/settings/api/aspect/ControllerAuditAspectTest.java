@@ -7,8 +7,8 @@ import com.epam.digital.data.platform.model.core.kafka.Status;
 import com.epam.digital.data.platform.settings.api.controller.SettingsController;
 import com.epam.digital.data.platform.settings.api.exception.ApplicationExceptionHandler;
 import com.epam.digital.data.platform.settings.api.service.RestAuditEventsFacade;
-import com.epam.digital.data.platform.settings.api.service.SettingsReadService;
-import com.epam.digital.data.platform.settings.api.service.SettingsUpdateService;
+import com.epam.digital.data.platform.settings.api.service.impl.SettingsReadService;
+import com.epam.digital.data.platform.settings.api.service.impl.SettingsUpdateService;
 import com.epam.digital.data.platform.settings.api.service.TraceService;
 import com.epam.digital.data.platform.settings.model.dto.SettingsUpdateInputDto;
 import com.epam.digital.data.platform.settings.model.dto.SettingsUpdateOutputDto;
@@ -26,8 +26,6 @@ import org.springframework.boot.test.context.TestComponent;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.web.bind.annotation.PutMapping;
-
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;

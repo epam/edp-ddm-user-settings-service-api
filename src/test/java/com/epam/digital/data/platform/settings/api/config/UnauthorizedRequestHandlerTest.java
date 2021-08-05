@@ -2,13 +2,12 @@ package com.epam.digital.data.platform.settings.api.config;
 
 import com.epam.digital.data.platform.settings.api.controller.SettingsController;
 import com.epam.digital.data.platform.settings.api.service.RestAuditEventsFacade;
-import com.epam.digital.data.platform.settings.api.service.SettingsReadService;
-import com.epam.digital.data.platform.settings.api.service.SettingsUpdateService;
+import com.epam.digital.data.platform.settings.api.service.impl.SettingsReadService;
+import com.epam.digital.data.platform.settings.api.service.impl.SettingsUpdateService;
 import com.epam.digital.data.platform.settings.api.service.TraceService;
 import com.epam.digital.data.platform.settings.api.utils.ResponseCode;
 import com.epam.digital.data.platform.starter.audit.model.EventType;
 import com.epam.digital.data.platform.starter.security.WebSecurityConfig;
-import com.epam.digital.data.platform.starter.security.config.Whitelist;
 import com.epam.digital.data.platform.starter.security.jwt.RestAuthenticationEntryPoint;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;

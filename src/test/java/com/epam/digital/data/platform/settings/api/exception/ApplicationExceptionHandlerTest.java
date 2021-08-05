@@ -6,8 +6,8 @@ import com.epam.digital.data.platform.settings.api.controller.SettingsController
 import com.epam.digital.data.platform.settings.api.model.DetailedErrorResponse;
 import com.epam.digital.data.platform.settings.api.model.FieldsValidationErrorDetails;
 import com.epam.digital.data.platform.settings.api.service.RestAuditEventsFacade;
-import com.epam.digital.data.platform.settings.api.service.SettingsReadService;
-import com.epam.digital.data.platform.settings.api.service.SettingsUpdateService;
+import com.epam.digital.data.platform.settings.api.service.impl.SettingsReadService;
+import com.epam.digital.data.platform.settings.api.service.impl.SettingsUpdateService;
 import com.epam.digital.data.platform.settings.api.service.TraceService;
 import com.epam.digital.data.platform.settings.api.utils.ResponseCode;
 import com.epam.digital.data.platform.settings.model.dto.SettingsUpdateInputDto;
