@@ -1,7 +1,7 @@
 package com.epam.digital.data.platform.settings.api.config;
 
 import com.epam.digital.data.platform.settings.api.controller.SettingsController;
-import com.epam.digital.data.platform.settings.api.service.RestAuditEventsFacade;
+import com.epam.digital.data.platform.settings.api.audit.RestAuditEventsFacade;
 import com.epam.digital.data.platform.settings.api.service.impl.SettingsReadService;
 import com.epam.digital.data.platform.settings.api.service.impl.SettingsUpdateService;
 import com.epam.digital.data.platform.settings.api.service.TraceService;

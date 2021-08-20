@@ -1,7 +1,7 @@
 package com.epam.digital.data.platform.settings.api.config;
 
 import com.epam.digital.data.platform.settings.api.model.DetailedErrorResponse;
-import com.epam.digital.data.platform.settings.api.service.RestAuditEventsFacade;
+import com.epam.digital.data.platform.settings.api.audit.RestAuditEventsFacade;
 import com.epam.digital.data.platform.settings.api.service.TraceService;
 import com.epam.digital.data.platform.settings.api.utils.ResponseCode;
 import com.epam.digital.data.platform.starter.audit.model.EventType;

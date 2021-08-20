@@ -1,5 +1,7 @@
-package com.epam.digital.data.platform.settings.api.service;
+package com.epam.digital.data.platform.settings.api.audit;
 
+import com.epam.digital.data.platform.settings.api.service.TraceService;
+import com.epam.digital.data.platform.starter.audit.model.AuditUserInfo;
 import com.epam.digital.data.platform.starter.audit.model.EventType;
 import com.epam.digital.data.platform.starter.audit.service.AbstractAuditFacade;
 import com.epam.digital.data.platform.starter.audit.service.AuditService;
@@ -24,12 +26,12 @@ public class RestAuditEventsFacade extends AbstractAuditFacade {
   static final String ACTION = "action";
 
   public RestAuditEventsFacade(
-      @Value("${spring.application.name:user-settings-service-api}") String appName,
       AuditService auditService,
-      TraceService traceService,
+      @Value("${spring.application.name:user-settings-service-api}") String appName,
       Clock clock,
+      TraceService traceService,
       TokenParser tokenParser) {
-    super(appName, auditService, clock);
+    super(auditService, appName, clock);
     this.traceService = traceService;
     this.tokenParser = tokenParser;
   }
@@ -69,6 +71,11 @@ public class RestAuditEventsFacade extends AbstractAuditFacade {
     }
 
     var jwtClaimsDto = tokenParser.parseClaims(jwt);
-    event.setUserInfo(jwtClaimsDto.getDrfo(), jwtClaimsDto.getFullName());
+    var userInfo = AuditUserInfo.AuditUserInfoBuilder.anAuditUserInfo()
+            .userName(jwtClaimsDto.getFullName())
+            .userKeycloakId(jwtClaimsDto.getSubject())
+            .userDrfo(jwtClaimsDto.getDrfo())
+            .build();
+    event.setUserInfo(userInfo);
   }
 }

@@ -1,4 +1,4 @@
-package com.epam.digital.data.platform.settings.api.aspect;
+package com.epam.digital.data.platform.settings.api.audit;
 
 import com.epam.digital.data.platform.model.core.kafka.RequestContext;
 import com.epam.digital.data.platform.model.core.kafka.Response;
@@ -6,7 +6,6 @@ import com.epam.digital.data.platform.model.core.kafka.SecurityContext;
 import com.epam.digital.data.platform.model.core.kafka.Status;
 import com.epam.digital.data.platform.settings.api.controller.SettingsController;
 import com.epam.digital.data.platform.settings.api.exception.ApplicationExceptionHandler;
-import com.epam.digital.data.platform.settings.api.service.RestAuditEventsFacade;
 import com.epam.digital.data.platform.settings.api.service.impl.SettingsReadService;
 import com.epam.digital.data.platform.settings.api.service.impl.SettingsUpdateService;
 import com.epam.digital.data.platform.settings.api.service.TraceService;

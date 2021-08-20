@@ -5,7 +5,7 @@ import com.epam.digital.data.platform.model.core.kafka.Status;
 import com.epam.digital.data.platform.settings.api.controller.SettingsController;
 import com.epam.digital.data.platform.settings.api.model.DetailedErrorResponse;
 import com.epam.digital.data.platform.settings.api.model.FieldsValidationErrorDetails;
-import com.epam.digital.data.platform.settings.api.service.RestAuditEventsFacade;
+import com.epam.digital.data.platform.settings.api.audit.RestAuditEventsFacade;
 import com.epam.digital.data.platform.settings.api.service.impl.SettingsReadService;
 import com.epam.digital.data.platform.settings.api.service.impl.SettingsUpdateService;
 import com.epam.digital.data.platform.settings.api.service.TraceService;

@@ -4,7 +4,7 @@ import com.epam.digital.data.platform.model.core.kafka.Response;
 import com.epam.digital.data.platform.model.core.kafka.Status;
 import com.epam.digital.data.platform.settings.api.model.DetailedErrorResponse;
 import com.epam.digital.data.platform.settings.api.model.FieldsValidationErrorDetails;
-import com.epam.digital.data.platform.settings.api.service.RestAuditEventsFacade;
+import com.epam.digital.data.platform.settings.api.audit.RestAuditEventsFacade;
 import com.epam.digital.data.platform.settings.api.service.TraceService;
 import com.epam.digital.data.platform.settings.api.utils.ResponseCode;
 import com.epam.digital.data.platform.starter.security.exception.JwtParsingException;

@@ -1,8 +1,7 @@
-package com.epam.digital.data.platform.settings.api.aspect;
+package com.epam.digital.data.platform.settings.api.audit;
 
 import com.epam.digital.data.platform.model.core.kafka.SecurityContext;
 import com.epam.digital.data.platform.settings.api.model.DetailedErrorResponse;
-import com.epam.digital.data.platform.settings.api.service.RestAuditEventsFacade;
 import com.epam.digital.data.platform.settings.api.utils.ResponseCode;
 import com.epam.digital.data.platform.settings.model.dto.SettingsUpdateInputDto;
 import com.epam.digital.data.platform.starter.audit.model.EventType;
