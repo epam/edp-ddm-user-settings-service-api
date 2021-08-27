@@ -11,11 +11,15 @@ import com.fasterxml.jackson.databind.RuntimeJsonMappingException;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.internals.RecordHeader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate;
 import org.springframework.kafka.support.KafkaHeaders;
 
 public abstract class GenericService<I, O> {
+
+  private final Logger log = LoggerFactory.getLogger(GenericService.class);
 
   protected final ReplyingKafkaTemplate<String, Request<I>, String> replyingKafkaTemplate;
   protected final Handler topics;
@@ -37,11 +41,13 @@ public abstract class GenericService<I, O> {
     RecordHeader header = new RecordHeader(KafkaHeaders.REPLY_TOPIC, topics.getReplay().getBytes());
     request.headers().add(header);
 
+    log.info("Sending event to Kafka");
     var replyFuture = replyingKafkaTemplate.sendAndReceive(request);
 
     ConsumerRecord<String, String> response;
     try {
       response = replyFuture.get();
+      log.info("Successfully got response from Kafka");
     } catch (Exception e) {
       throw new NoKafkaResponseException("No response for request: " + input, e);
     }
