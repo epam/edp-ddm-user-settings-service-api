@@ -8,6 +8,8 @@ data:
     data-platform:
       kafka:
         bootstrap: {{ .Values.kafka.service }}
+        ssl
+          enabled: {{ .Values.kafka.sslEnabled }}
 
     audit:
       kafka:

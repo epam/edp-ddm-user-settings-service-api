@@ -4,6 +4,8 @@ spring:
 data-platform:
   kafka:
     bootstrap: localhost:9092
+    ssl:
+      enabled: false
 
 server:
   port: 8001
