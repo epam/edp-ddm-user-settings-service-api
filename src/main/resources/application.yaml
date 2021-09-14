@@ -89,8 +89,6 @@ data-platform:
       max-elapsed-time: 6000
       multiplier: 2
     topic-properties:
-      num-partitions: 1
-      replication-factor: 1
       retention-policy-in-days:
         read: 7
         write: 7

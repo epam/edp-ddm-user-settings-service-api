@@ -10,6 +10,9 @@ data:
         bootstrap: {{ .Values.kafka.service }}
         ssl:
           enabled: {{ .Values.kafka.sslEnabled }}
+        topic-properties:
+          num-partitions: 3
+          replication-factor: 3
 
     audit:
       kafka:
