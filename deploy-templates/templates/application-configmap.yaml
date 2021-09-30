@@ -11,8 +11,8 @@ data:
         ssl:
           enabled: {{ .Values.kafka.sslEnabled }}
         topic-properties:
-          num-partitions: 3
-          replication-factor: 3
+          num-partitions: {{ .Values.kafka.numPartitions }}
+          replication-factor: {{ .Values.kafka.replicationFactor }}
 
     audit:
       kafka:
