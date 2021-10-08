@@ -50,10 +50,10 @@ spec:
           resources:
             limits:
               cpu: 400m
-              memory: 768Mi
+              memory: 800Mi
             requests:
               cpu: 400m
-              memory: 768Mi
+              memory: 800Mi
           env:
             - name: JAVA_OPTS
               value: {{ .Values.java.javaOpts }}
