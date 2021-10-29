@@ -4,7 +4,7 @@
 This service provides web api for processing account settings of specific system user (email, phone etc.).
 
 ### Related components:
-* [user-settings-service-persistence](https://gitbud.epam.com/mdtu-ddm/data-architecture/application/user-settings-service-persistence) - service, which interacts with database
+* user-settings-service-persistence - service, which interacts with database
 * Kafka for message exchanging with user-settings-service-persistence
 
 ### Local deployment:
