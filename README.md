@@ -19,3 +19,6 @@ This service provides web api for processing account settings of specific system
 1. Run application with your favourite IDE or via `java -jar ...` with jar file, created above
 
 Application starts by default on port 8001, to get familiar with available endpoints - visit swagger (`localhost:8001/openapi`).
+
+### License
+user-settings-service-api is Open Source software released under the Apache 2.0 license.
