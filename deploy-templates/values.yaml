@@ -1,4 +1,6 @@
 global:
+  kafkaOperator:
+    replicationFactor: 3
   disableRequestsLimits: false
 
 name: user-settings-service-api
@@ -21,7 +23,6 @@ kafka:
   service: kafka-cluster-kafka-bootstrap:9092
   sslEnabled: false
   numPartitions: 3
-  replicationFactor: 3
 
 image:
   name: user-settings-service-api

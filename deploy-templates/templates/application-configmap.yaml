@@ -12,7 +12,7 @@ data:
           enabled: {{ .Values.kafka.sslEnabled }}
         topic-properties:
           num-partitions: {{ .Values.kafka.numPartitions }}
-          replication-factor: {{ .Values.kafka.replicationFactor }}
+          replication-factor: {{ .Values.global.kafkaOperator.replicationFactor }}
 
     audit:
       kafka:
