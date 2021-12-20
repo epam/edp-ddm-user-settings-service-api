@@ -16,7 +16,6 @@
 
 package com.epam.digital.data.platform.settings.api.audit;
 
-import com.epam.digital.data.platform.model.core.kafka.RequestContext;
 import com.epam.digital.data.platform.model.core.kafka.Response;
 import com.epam.digital.data.platform.model.core.kafka.SecurityContext;
 import com.epam.digital.data.platform.model.core.kafka.Status;
@@ -52,12 +51,15 @@ import static org.mockito.Mockito.when;
 @Import(AopAutoConfiguration.class)
 @SpringBootTest(classes = {
     SettingsController.class,
-    ControllerAuditAspectTest.MockNonControllerClient.class,
-    ControllerAuditAspect.class,
+    AuditAspectTest.MockNonControllerClient.class,
+    AuditEventProcessor.class,
+    AuditAspect.class,
     ApplicationExceptionHandler.class,
     TokenParser.class
 })
-class ControllerAuditAspectTest {
+@MockBean(ObjectMapper.class)
+@MockBean(TraceService.class)
+class AuditAspectTest {
 
   @Autowired
   private SettingsController controller;
@@ -67,20 +69,14 @@ class ControllerAuditAspectTest {
   private MockNonControllerClient nonControllerClient;
   @Autowired
   private TokenParser tokenParser;
-
-  @MockBean
-  private ObjectMapper objectMapper;
+  
   @MockBean
   private SettingsReadService readService;
   @MockBean
   private SettingsUpdateService updateService;
   @MockBean
   private RestAuditEventsFacade restAuditEventsFacade;
-  @MockBean
-  private TraceService traceService;
 
-  @Mock
-  private RequestContext mockRequestContext;
   @Mock
   private SecurityContext mockSecurityContext;
 

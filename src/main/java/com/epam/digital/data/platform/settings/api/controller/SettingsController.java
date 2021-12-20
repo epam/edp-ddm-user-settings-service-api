@@ -18,6 +18,7 @@ package com.epam.digital.data.platform.settings.api.controller;
 
 import com.epam.digital.data.platform.model.core.kafka.Request;
 import com.epam.digital.data.platform.model.core.kafka.SecurityContext;
+import com.epam.digital.data.platform.settings.api.audit.AuditableController;
 import com.epam.digital.data.platform.settings.api.annotation.HttpSecurityContext;
 import com.epam.digital.data.platform.settings.api.service.impl.SettingsReadService;
 import com.epam.digital.data.platform.settings.api.service.impl.SettingsUpdateService;
@@ -49,6 +50,7 @@ public class SettingsController {
     this.updateService = updateService;
   }
 
+  @AuditableController
   @GetMapping
   public ResponseEntity<SettingsReadDto> findUserSettings(
       @HttpSecurityContext SecurityContext securityContext) {
@@ -58,6 +60,7 @@ public class SettingsController {
     return ResponseResolverUtil.getHttpResponseFromKafka(response);
   }
 
+  @AuditableController
   @PutMapping
   public ResponseEntity<SettingsUpdateOutputDto> updateUserSettings(
       @Valid @RequestBody SettingsUpdateInputDto input,

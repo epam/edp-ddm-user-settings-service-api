@@ -18,6 +18,7 @@ package com.epam.digital.data.platform.settings.api.exception;
 
 import com.epam.digital.data.platform.model.core.kafka.Response;
 import com.epam.digital.data.platform.model.core.kafka.Status;
+import com.epam.digital.data.platform.settings.api.audit.AuditableException;
 import com.epam.digital.data.platform.settings.api.model.DetailedErrorResponse;
 import com.epam.digital.data.platform.settings.api.model.FieldsValidationErrorDetails;
 import com.epam.digital.data.platform.settings.api.audit.RestAuditEventsFacade;
@@ -67,6 +68,7 @@ public class ApplicationExceptionHandler extends ResponseEntityExceptionHandler 
     this.traceService = traceService;
   }
 
+  @AuditableException
   @ExceptionHandler(NoKafkaResponseException.class)
   public ResponseEntity<DetailedErrorResponse<Void>> handleNoKafkaResponseExceptionException(
       NoKafkaResponseException exception) {
@@ -75,6 +77,7 @@ public class ApplicationExceptionHandler extends ResponseEntityExceptionHandler 
         .body(newDetailedResponse(ResponseCode.TIMEOUT_ERROR));
   }
 
+  @AuditableException
   @ExceptionHandler(AccessDeniedException.class)
   public ResponseEntity<DetailedErrorResponse<Void>> handleAccessDeniedException(
       AccessDeniedException exception) {
@@ -83,6 +86,7 @@ public class ApplicationExceptionHandler extends ResponseEntityExceptionHandler 
         .body(newDetailedResponse(ResponseCode.FORBIDDEN_OPERATION));
   }
 
+  @AuditableException
   @Override
   protected ResponseEntity<Object> handleMethodArgumentNotValid(
       MethodArgumentNotValidException exception, HttpHeaders headers, HttpStatus status,
@@ -101,6 +105,7 @@ public class ApplicationExceptionHandler extends ResponseEntityExceptionHandler 
     return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(invalidFieldsResponse);
   }
 
+  @AuditableException
   @ExceptionHandler(Exception.class)
   public ResponseEntity<DetailedErrorResponse<Void>> handleException(Exception exception) {
     log.error("Runtime error occurred", exception);
@@ -108,6 +113,7 @@ public class ApplicationExceptionHandler extends ResponseEntityExceptionHandler 
         .body(newDetailedResponse(ResponseCode.RUNTIME_ERROR));
   }
 
+  @AuditableException
   @Override
   protected ResponseEntity<Object> handleHttpMessageNotReadable(
       HttpMessageNotReadableException exception, HttpHeaders headers, HttpStatus status,
@@ -118,6 +124,7 @@ public class ApplicationExceptionHandler extends ResponseEntityExceptionHandler 
         .body(newDetailedResponse(ResponseCode.CLIENT_ERROR));
   }
 
+  @AuditableException
   @Override
   protected ResponseEntity<Object> handleHttpMediaTypeNotSupported(
       HttpMediaTypeNotSupportedException ex, HttpHeaders headers, HttpStatus status,
@@ -127,6 +134,7 @@ public class ApplicationExceptionHandler extends ResponseEntityExceptionHandler 
         .body(newDetailedResponse(ResponseCode.UNSUPPORTED_MEDIA_TYPE));
   }
 
+  @AuditableException
   @ExceptionHandler(JwtParsingException.class)
   public ResponseEntity<DetailedErrorResponse<Void>> handleJwtParsingException(
       Exception exception) {
@@ -136,6 +144,7 @@ public class ApplicationExceptionHandler extends ResponseEntityExceptionHandler 
         .body(newDetailedResponse(ResponseCode.JWT_INVALID));
   }
 
+  @AuditableException
   @Override
   protected ResponseEntity<Object> handleNoHandlerFoundException(
       NoHandlerFoundException exception, HttpHeaders headers, HttpStatus status,
@@ -145,6 +154,7 @@ public class ApplicationExceptionHandler extends ResponseEntityExceptionHandler 
         .body(newDetailedResponse(ResponseCode.NOT_FOUND));
   }
 
+  @AuditableException
   @ExceptionHandler(KafkaInternalServerException.class)
   public ResponseEntity<DetailedErrorResponse<Void>> handleKafkaInternalException(
       KafkaInternalServerException kafkaInternalServerException) {
@@ -157,6 +167,7 @@ public class ApplicationExceptionHandler extends ResponseEntityExceptionHandler 
         .body(newDetailedResponse(code));
   }
 
+  @AuditableException
   @ExceptionHandler(KafkaSecurityValidationFailedException.class)
   public ResponseEntity<DetailedErrorResponse<Void>> handleKafkaSecurityException(
       KafkaSecurityValidationFailedException exception) {
@@ -167,6 +178,7 @@ public class ApplicationExceptionHandler extends ResponseEntityExceptionHandler 
         .body(newDetailedResponse(code));
   }
 
+  @AuditableException
   @ExceptionHandler(NotFoundException.class)
   public ResponseEntity<DetailedErrorResponse<Void>> handleNotFoundException(
       NotFoundException exception) {
@@ -175,6 +187,7 @@ public class ApplicationExceptionHandler extends ResponseEntityExceptionHandler 
         .body(newDetailedResponse(ResponseCode.NOT_FOUND));
   }
 
+  @AuditableException
   @ExceptionHandler(MethodArgumentTypeMismatchException.class)
   public ResponseEntity<DetailedErrorResponse<Void>> handleMethodArgumentTypeMismatchException(
       Exception exception) {
@@ -183,6 +196,7 @@ public class ApplicationExceptionHandler extends ResponseEntityExceptionHandler 
         .body(newDetailedResponse(ResponseCode.METHOD_ARGUMENT_TYPE_MISMATCH));
   }
 
+  @AuditableException
   @Override
   protected ResponseEntity<Object> handleBindException(
       BindException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
