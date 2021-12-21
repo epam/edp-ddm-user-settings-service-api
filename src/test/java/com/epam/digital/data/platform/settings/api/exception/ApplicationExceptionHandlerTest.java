@@ -42,6 +42,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
@@ -226,8 +228,11 @@ class ApplicationExceptionHandlerTest extends ResponseEntityExceptionHandler {
 
   @Test
   void shouldReturn404WhenNoHandlerFoundException() throws Exception {
-    mockMvc
-            .perform(get("/someBadUrl"))
+    MockHttpServletRequestBuilder requestBuilder = get("/someBadUrl");
+    
+    ResultActions perform = mockMvc.perform(requestBuilder);
+    
+    perform
             .andExpect(
                     matchAll(
                             status().isNotFound(),

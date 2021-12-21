@@ -82,7 +82,7 @@ class GenericServiceTest {
     RequestReplyFuture<String, Request<SettingsUpdateInputDto>, String>
         replyFuture =
             wrapResponseObjectAsKafkaReplay(request, responsePayload);
-    when(replyingKafkaTemplate.sendAndReceive(any())).thenReturn(replyFuture);
+    when(replyingKafkaTemplate.sendAndReceive(any(ProducerRecord.class))).thenReturn(replyFuture);
 
     Response<SettingsUpdateOutputDto> actual = settingsUpdateService.request(request);
 
@@ -98,7 +98,7 @@ class GenericServiceTest {
   @Test
   void shouldThrowExceptionWhenTimeout() throws ExecutionException, InterruptedException {
     RequestReplyFuture mockReplyFuture = Mockito.mock(RequestReplyFuture.class);
-    when(replyingKafkaTemplate.sendAndReceive(any())).thenReturn(mockReplyFuture);
+    when(replyingKafkaTemplate.sendAndReceive(any(ProducerRecord.class))).thenReturn(mockReplyFuture);
 
     Mockito.doThrow(new InterruptedException()).when(mockReplyFuture).get();
 
@@ -116,7 +116,7 @@ class GenericServiceTest {
     RequestReplyFuture<String, Request<SettingsUpdateInputDto>, String>
         replyFuture =
         wrapResponseObjectAsKafkaReplay(request, "invalid json");
-    when(replyingKafkaTemplate.sendAndReceive(any())).thenReturn(replyFuture);
+    when(replyingKafkaTemplate.sendAndReceive(any(ProducerRecord.class))).thenReturn(replyFuture);
 
     Exception exception = assertThrows(RuntimeJsonMappingException.class, () -> {
       settingsUpdateService.request(request);
