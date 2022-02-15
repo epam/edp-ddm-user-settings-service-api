@@ -17,6 +17,11 @@ data:
           num-partitions: {{ .Values.kafka.numPartitions }}
           replication-factor: {{ .Values.global.kafkaOperator.replicationFactor }}
 
+    platform:
+      security:
+        csrf:
+          enabled: {{ .Values.platform.security.csrf.enabled }}
+
     audit:
       kafka:
         bootstrap: {{ .Values.kafka.service }}
