@@ -20,7 +20,7 @@ data:
     platform:
       security:
         csrf:
-          enabled: {{ .Values.platform.security.csrf.enabled }}
+          enabled: false
 
     audit:
       kafka:
