@@ -30,7 +30,7 @@ import com.epam.digital.data.platform.settings.api.exception.NoKafkaResponseExce
 import com.epam.digital.data.platform.settings.api.service.impl.SettingsUpdateService;
 import com.epam.digital.data.platform.settings.model.dto.SettingsUpdateInputDto;
 import com.epam.digital.data.platform.settings.model.dto.SettingsUpdateOutputDto;
-import com.epam.digital.data.platform.starter.restapi.config.properties.KafkaProperties;
+import com.epam.digital.data.platform.starter.kafka.config.properties.KafkaProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.RuntimeJsonMappingException;

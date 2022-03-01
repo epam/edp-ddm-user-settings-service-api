@@ -19,7 +19,7 @@ package com.epam.digital.data.platform.settings.api.service;
 import com.epam.digital.data.platform.model.core.kafka.Request;
 import com.epam.digital.data.platform.model.core.kafka.Response;
 import com.epam.digital.data.platform.settings.api.exception.NoKafkaResponseException;
-import com.epam.digital.data.platform.starter.restapi.config.properties.KafkaProperties.Handler;
+import com.epam.digital.data.platform.starter.kafka.config.properties.KafkaProperties.RequestReplyHandler;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -38,14 +38,14 @@ public abstract class GenericService<I, O> {
   private final Logger log = LoggerFactory.getLogger(GenericService.class);
 
   protected final ReplyingKafkaTemplate<String, Request<I>, String> replyingKafkaTemplate;
-  protected final Handler topics;
+  protected final RequestReplyHandler topics;
 
   @Autowired
   private ObjectMapper objectMapper;
 
   protected GenericService(
       ReplyingKafkaTemplate<String, Request<I>, String> replyingKafkaTemplate,
-      Handler topics) {
+      RequestReplyHandler topics) {
     this.replyingKafkaTemplate = replyingKafkaTemplate;
     this.topics = topics;
   }
@@ -54,7 +54,7 @@ public abstract class GenericService<I, O> {
 
   public Response<O> request(Request<I> input) {
     ProducerRecord<String, Request<I>> request = new ProducerRecord<>(topics.getRequest(), input);
-    RecordHeader header = new RecordHeader(KafkaHeaders.REPLY_TOPIC, topics.getReplay().getBytes());
+    RecordHeader header = new RecordHeader(KafkaHeaders.REPLY_TOPIC, topics.getReply().getBytes());
     request.headers().add(header);
 
     log.info("Sending event to Kafka");

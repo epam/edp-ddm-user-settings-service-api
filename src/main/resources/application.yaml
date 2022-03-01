@@ -81,22 +81,33 @@ logbook:
 
 data-platform:
   kafka:
-    group-id: user-settings-service-api
-    trusted-packages:
-      - com.epam.digital.data.platform.model.core.kafka
-      - com.epam.digital.data.platform.settings.model.dto
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: user-settings-service-api
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      trusted-packages:
+        - com.epam.digital.data.platform.model.core.kafka
+        - com.epam.digital.data.platform.settings.model.dto
+    request-reply:
+      enabled: true
+      timeout-in-seconds: 30
+      topics:
+        read-settings:
+          request: read-settings-inbound
+          reply: read-settings-outbound
+        update-settings:
+          request: update-settings-inbound
+          reply: update-settings-outbound
+    topic-properties:
+      creation:
+        enabled: true
+        timeout-in-seconds: 60
+      retention:
+        default-in-days: 7
     error-handler:
       initial-interval: 1500
       max-elapsed-time: 6000
       multiplier: 2
-    topic-properties:
-      retention-policy-in-days:
-        read: 7
-        write: 7
-    topics:
-      read-settings:
-        request: read-settings-inbound
-        replay: read-settings-outbound
-      update-settings:
-        request: update-settings-inbound
-        replay: update-settings-outbound
