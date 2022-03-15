@@ -33,6 +33,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
@@ -144,6 +145,15 @@ public class ApplicationExceptionHandler extends ResponseEntityExceptionHandler 
         .body(newDetailedResponse(ResponseCode.JWT_INVALID));
   }
 
+  @AuditableException
+  @ExceptionHandler(AuthenticationException.class)
+  public ResponseEntity<DetailedErrorResponse<Void>> handleAuthenticationException(
+      AuthenticationException exception) {
+    log.error("Authentication failure", exception);
+    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+        .body(newDetailedResponse(ResponseCode.AUTHENTICATION_FAILED));
+  }
+  
   @AuditableException
   @Override
   protected ResponseEntity<Object> handleNoHandlerFoundException(
