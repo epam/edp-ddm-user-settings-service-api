@@ -21,6 +21,8 @@ spring:
 springdoc:
   swagger-ui:
     path: /openapi
+    csrf:
+      enabled: true
 
 openapi:
   request:
