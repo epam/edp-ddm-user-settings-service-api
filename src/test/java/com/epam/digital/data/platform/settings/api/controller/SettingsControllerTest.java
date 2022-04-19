@@ -19,6 +19,7 @@ package com.epam.digital.data.platform.settings.api.controller;
 import com.epam.digital.data.platform.model.core.kafka.Response;
 import com.epam.digital.data.platform.model.core.kafka.Status;
 import com.epam.digital.data.platform.settings.api.config.TestBeansConfig;
+import com.epam.digital.data.platform.settings.api.service.impl.SettingsReadByKeycloakIdService;
 import com.epam.digital.data.platform.settings.api.service.impl.SettingsReadService;
 import com.epam.digital.data.platform.settings.api.service.impl.SettingsUpdateService;
 import com.epam.digital.data.platform.settings.model.dto.SettingsReadDto;
@@ -56,6 +57,7 @@ class SettingsControllerTest {
   private static final String BASE_URL = "/settings";
 
   private static final UUID SETTINGS_ID = UUID.fromString("123e4567-e89b-12d3-a456-426655440000");
+  private static final UUID KEYCLOAK_ID = UUID.fromString("123e4567-e89b-12d3-a456-426655440001");
   private static final String EMAIL = "email@email.com";
   private static final String PHONE = "0000000000";
 
@@ -64,9 +66,10 @@ class SettingsControllerTest {
 
   @MockBean
   private SettingsReadService readService;
-
   @MockBean
   private SettingsUpdateService updateService;
+  @MockBean
+  private SettingsReadByKeycloakIdService readByKeycloakIdService;
 
   @Test
   void expectUserSettingsReturnedFromKafka() throws Exception {
@@ -82,6 +85,29 @@ class SettingsControllerTest {
 
     mockMvc
         .perform(get(BASE_URL))
+        .andExpect(
+            matchAll(
+                status().isOk(),
+                content().contentType(MediaType.APPLICATION_JSON),
+                jsonPath("$.settings_id", is(SETTINGS_ID.toString())),
+                jsonPath("$.e-mail", is(EMAIL)),
+                jsonPath("$.phone", is(PHONE))));
+  }
+
+  @Test
+  void expectReadSettingsByIdIsReturnedFromKafka() throws Exception {
+    var response = new Response<SettingsReadDto>();
+    response.setStatus(Status.SUCCESS);
+    var payload = new SettingsReadDto();
+    payload.setSettingsId(SETTINGS_ID);
+    payload.setEmail(EMAIL);
+    payload.setPhone(PHONE);
+    response.setPayload(payload);
+
+    when(readByKeycloakIdService.request(any())).thenReturn(response);
+
+    mockMvc
+        .perform(get(BASE_URL + "/" + KEYCLOAK_ID))
         .andExpect(
             matchAll(
                 status().isOk(),

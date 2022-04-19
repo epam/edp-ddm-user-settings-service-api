@@ -21,8 +21,10 @@ import com.epam.digital.data.platform.model.core.kafka.SecurityContext;
 import com.epam.digital.data.platform.settings.api.audit.AuditableController;
 import com.epam.digital.data.platform.settings.api.annotation.HttpSecurityContext;
 import com.epam.digital.data.platform.settings.api.service.impl.SettingsReadService;
+import com.epam.digital.data.platform.settings.api.service.impl.SettingsReadByKeycloakIdService;
 import com.epam.digital.data.platform.settings.api.service.impl.SettingsUpdateService;
 import com.epam.digital.data.platform.settings.api.utils.ResponseResolverUtil;
+import com.epam.digital.data.platform.settings.model.dto.SettingsReadByKeycloakIdInputDto;
 import com.epam.digital.data.platform.settings.model.dto.SettingsReadDto;
 import com.epam.digital.data.platform.settings.model.dto.SettingsUpdateInputDto;
 import com.epam.digital.data.platform.settings.model.dto.SettingsUpdateOutputDto;
@@ -31,10 +33,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/settings")
@@ -44,10 +49,15 @@ public class SettingsController {
 
   private final SettingsReadService readService;
   private final SettingsUpdateService updateService;
+  private final SettingsReadByKeycloakIdService readByKeycloakIdService;
 
-  public SettingsController(SettingsReadService readService, SettingsUpdateService updateService) {
+  public SettingsController(
+      SettingsReadService readService,
+      SettingsUpdateService updateService,
+      SettingsReadByKeycloakIdService readByKeycloakIdService) {
     this.readService = readService;
     this.updateService = updateService;
+    this.readByKeycloakIdService = readByKeycloakIdService;
   }
 
   @AuditableController
@@ -68,6 +78,17 @@ public class SettingsController {
     log.info("Put settings called");
     var request = new Request<>(input, securityContext);
     var response = updateService.request(request);
+    return ResponseResolverUtil.getHttpResponseFromKafka(response);
+  }
+
+  @AuditableController
+  @GetMapping("/{keycloakId}")
+  public ResponseEntity<SettingsReadDto> findUserSettingsByKeycloakId(
+      @PathVariable("keycloakId") UUID keycloakId,
+      @HttpSecurityContext SecurityContext securityContext) {
+    log.info("Get settings by keycloak id called");
+    var request = new Request<>(new SettingsReadByKeycloakIdInputDto(keycloakId), securityContext);
+    var response = readByKeycloakIdService.request(request);
     return ResponseResolverUtil.getHttpResponseFromKafka(response);
   }
 }

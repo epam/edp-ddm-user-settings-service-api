@@ -21,6 +21,7 @@ import com.epam.digital.data.platform.model.core.kafka.SecurityContext;
 import com.epam.digital.data.platform.model.core.kafka.Status;
 import com.epam.digital.data.platform.settings.api.controller.SettingsController;
 import com.epam.digital.data.platform.settings.api.exception.ApplicationExceptionHandler;
+import com.epam.digital.data.platform.settings.api.service.impl.SettingsReadByKeycloakIdService;
 import com.epam.digital.data.platform.settings.api.service.impl.SettingsReadService;
 import com.epam.digital.data.platform.settings.api.service.impl.SettingsUpdateService;
 import com.epam.digital.data.platform.settings.api.service.TraceService;
@@ -74,6 +75,8 @@ class AuditAspectTest {
   private SettingsReadService readService;
   @MockBean
   private SettingsUpdateService updateService;
+  @MockBean
+  private SettingsReadByKeycloakIdService readByKeycloakIdService;
   @MockBean
   private RestAuditEventsFacade restAuditEventsFacade;
 

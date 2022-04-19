@@ -100,6 +100,9 @@ data-platform:
         update-settings:
           request: update-settings-inbound
           reply: update-settings-outbound
+        read-settings-by-keycloak-id:
+          request: read-settings-by-keycloak-id-inbound
+          reply: read-settings-by-keycloak-id-outbound
     topic-properties:
       creation:
         enabled: true

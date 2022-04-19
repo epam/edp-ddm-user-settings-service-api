@@ -5,7 +5,7 @@
 
 	<groupId>com.epam.digital.data.platform</groupId>
 	<artifactId>user-settings-service-api</artifactId>
-	<version>1.6.0</version>
+	<version>1.7.0</version>
 
 	<name>user-settings-service-api</name>
 	<description>user-settings-service-api</description>

@@ -33,6 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.epam.digital.data.platform.model.core.kafka.Request;
 import com.epam.digital.data.platform.model.core.kafka.Response;
 import com.epam.digital.data.platform.model.core.kafka.Status;
+import com.epam.digital.data.platform.settings.model.dto.SettingsReadByKeycloakIdInputDto;
 import com.epam.digital.data.platform.settings.model.dto.SettingsReadDto;
 import com.epam.digital.data.platform.settings.model.dto.SettingsUpdateInputDto;
 import com.epam.digital.data.platform.settings.model.dto.SettingsUpdateOutputDto;
@@ -71,6 +72,9 @@ class SettingsControllerIT {
   private static final UUID SETTINGS_ID = UUID.fromString("123e4567-e89b-12d3-a456-426655440000");
   private static final String EMAIL = "name@email.com";
   private static final String PHONE = "0000000000";
+
+  private static final UUID SEARCHED_KEYCLOAK_ID =
+      UUID.fromString("11111111-1111-1111-1111-111111111111");
 
   private static String OFFICER_TOKEN;
 
@@ -130,6 +134,57 @@ class SettingsControllerIT {
     assertThat(headers[0].key()).isEqualTo("kafka_replyTopic");
     assertThat(new String(headers[0].value(), StandardCharsets.UTF_8))
         .isEqualTo(kafkaProperties.getRequestReply().getTopics().get("read-settings").getReply());
+  }
+
+  @Test
+  void shouldReadDataByKeycloakIdThroughKafkaRequestReply() throws Exception {
+    // given
+    var response = wrapToResponse(mockSettingsReadDto(), Status.SUCCESS);
+
+    RequestReplyFuture<String, Request<SettingsReadByKeycloakIdInputDto>, String> replyFuture =
+        new RequestReplyFuture<>();
+    replyFuture.set(wrapToConsumerRecord(response));
+    when(replyingKafkaTemplate.sendAndReceive((ProducerRecord) any())).thenReturn(replyFuture);
+
+    // when
+    mockMvc
+            .perform(get(BASE_URL + "/" + SEARCHED_KEYCLOAK_ID.toString())
+                    .header(X_ACCESS_TOKEN.getHeaderName(), OFFICER_TOKEN))
+            .andExpectAll(
+                    status().isOk(),
+                    content().contentType(MediaType.APPLICATION_JSON),
+                    jsonPath("$.settings_id", is(SETTINGS_ID.toString())),
+                    jsonPath("$.e-mail", is(EMAIL)),
+                    jsonPath("$.phone", is(PHONE)));
+
+    // then
+    verify(replyingKafkaTemplate).sendAndReceive(captor.capture());
+    var procedureRecord = captor.getValue();
+
+    assertThat(procedureRecord.topic())
+        .isEqualTo(
+            kafkaProperties
+                .getRequestReply()
+                .getTopics()
+                .get("read-settings-by-keycloak-id")
+                .getRequest());
+
+    assertThat(((Request) procedureRecord.value()).getSecurityContext().getAccessToken())
+        .isEqualTo(OFFICER_TOKEN);
+    var kafkaInputDto =
+        (SettingsReadByKeycloakIdInputDto) ((Request<?>) procedureRecord.value()).getPayload();
+    assertThat(kafkaInputDto).isEqualTo(new SettingsReadByKeycloakIdInputDto(SEARCHED_KEYCLOAK_ID));
+
+    var headers = procedureRecord.headers().toArray();
+    assertThat(headers).hasSize(1);
+    assertThat(headers[0].key()).isEqualTo("kafka_replyTopic");
+    assertThat(new String(headers[0].value(), StandardCharsets.UTF_8))
+        .isEqualTo(
+            kafkaProperties
+                .getRequestReply()
+                .getTopics()
+                .get("read-settings-by-keycloak-id")
+                .getReply());
   }
 
   @Test

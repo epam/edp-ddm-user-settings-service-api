@@ -22,6 +22,7 @@ import com.epam.digital.data.platform.settings.api.controller.SettingsController
 import com.epam.digital.data.platform.settings.api.model.DetailedErrorResponse;
 import com.epam.digital.data.platform.settings.api.model.FieldsValidationErrorDetails;
 import com.epam.digital.data.platform.settings.api.audit.RestAuditEventsFacade;
+import com.epam.digital.data.platform.settings.api.service.impl.SettingsReadByKeycloakIdService;
 import com.epam.digital.data.platform.settings.api.service.impl.SettingsReadService;
 import com.epam.digital.data.platform.settings.api.service.impl.SettingsUpdateService;
 import com.epam.digital.data.platform.settings.api.service.TraceService;
@@ -79,6 +80,8 @@ class ApplicationExceptionHandlerTest extends ResponseEntityExceptionHandler {
   private SettingsReadService readService;
   @MockBean
   private SettingsUpdateService updateService;
+  @MockBean
+  private SettingsReadByKeycloakIdService settingsReadByKeycloakIdService;
   @MockBean
   private RestAuditEventsFacade restAuditEventsFacade;
   @MockBean

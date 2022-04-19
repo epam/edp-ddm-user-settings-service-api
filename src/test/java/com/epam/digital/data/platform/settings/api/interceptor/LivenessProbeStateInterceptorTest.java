@@ -20,6 +20,7 @@ import com.epam.digital.data.platform.model.core.kafka.Response;
 import com.epam.digital.data.platform.model.core.kafka.Status;
 import com.epam.digital.data.platform.settings.api.config.WebConfig;
 import com.epam.digital.data.platform.settings.api.controller.SettingsController;
+import com.epam.digital.data.platform.settings.api.service.impl.SettingsReadByKeycloakIdService;
 import com.epam.digital.data.platform.settings.api.service.impl.SettingsReadService;
 import com.epam.digital.data.platform.settings.api.service.impl.SettingsUpdateService;
 import com.epam.digital.data.platform.settings.model.dto.SettingsReadDto;
@@ -58,6 +59,8 @@ class LivenessProbeStateInterceptorTest {
   private SettingsReadService readService;
   @MockBean
   private SettingsUpdateService updateService;
+  @MockBean
+  private SettingsReadByKeycloakIdService readByKeycloakIdService;
   @MockBean
   private LivenessStateHandler livenessStateHandler;
 
