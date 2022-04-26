@@ -5,20 +5,20 @@
 
 	<groupId>com.epam.digital.data.platform</groupId>
 	<artifactId>user-settings-service-api</artifactId>
-	<version>1.5.0-SNAPSHOT</version>
+	<version>1.6.0</version>
 
 	<name>user-settings-service-api</name>
 	<description>user-settings-service-api</description>
 
 	<properties>
-		<model.version>1.4.0-SNAPSHOT</model.version>
-		<model.core.version>1.4.0-SNAPSHOT</model.core.version>
-		<ddm.starter.kafka.version>1.5.0-SNAPSHOT</ddm.starter.kafka.version>
-		<ddm.starter.logger.version>1.5.1-SNAPSHOT</ddm.starter.logger.version>
-		<ddm.starter.actuator.version>1.5.3-SNAPSHOT</ddm.starter.actuator.version>
-		<ddm.starter.swagger.version>1.5.0-SNAPSHOT</ddm.starter.swagger.version>
-		<ddm.starter.audit.version>1.5.2-SNAPSHOT</ddm.starter.audit.version>
-		<ddm.starter.security.version>1.5.2-SNAPSHOT</ddm.starter.security.version>
+		<model.version>1.6.0.1</model.version>
+		<model.core.version>1.6.0.60</model.core.version>
+		<ddm.starter.kafka.version>1.6.0.1</ddm.starter.kafka.version>
+		<ddm.starter.logger.version>1.6.0.1</ddm.starter.logger.version>
+		<ddm.starter.actuator.version>1.6.0.1</ddm.starter.actuator.version>
+		<ddm.starter.swagger.version>1.6.0.1</ddm.starter.swagger.version>
+		<ddm.starter.audit.version>1.6.0.1</ddm.starter.audit.version>
+		<ddm.starter.security.version>1.6.0.1</ddm.starter.security.version>
 		<log4j.version>2.17.0</log4j.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
