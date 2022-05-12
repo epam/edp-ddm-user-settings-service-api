@@ -16,8 +16,9 @@ data:
           keystore-key: {{ .Values.kafka.sslUserKey }}
           truststore-certificate: {{ .Values.kafka.sslClusterCertificate }}
         topic-properties:
-          num-partitions: {{ .Values.kafka.numPartitions }}
-          replication-factor: {{ .Values.global.kafkaOperator.replicationFactor }}
+          creation:
+            num-partitions: {{ .Values.kafka.numPartitions }}
+            replication-factor: {{ .Values.global.kafkaOperator.replicationFactor }}
 
     platform:
       security:
