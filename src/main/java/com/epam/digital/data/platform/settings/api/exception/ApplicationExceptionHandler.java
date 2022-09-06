@@ -16,14 +16,15 @@
 
 package com.epam.digital.data.platform.settings.api.exception;
 
-import com.epam.digital.data.platform.model.core.kafka.Response;
-import com.epam.digital.data.platform.model.core.kafka.Status;
-import com.epam.digital.data.platform.settings.api.audit.AuditableException;
+import static java.util.stream.Collectors.toList;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+
 import com.epam.digital.data.platform.settings.api.model.DetailedErrorResponse;
+import com.epam.digital.data.platform.settings.api.model.DetailedValidationErrorResponse;
 import com.epam.digital.data.platform.settings.api.model.FieldsValidationErrorDetails;
-import com.epam.digital.data.platform.settings.api.audit.RestAuditEventsFacade;
 import com.epam.digital.data.platform.settings.api.service.TraceService;
 import com.epam.digital.data.platform.settings.api.utils.ResponseCode;
+import com.epam.digital.data.platform.starter.localization.MessageResolver;
 import com.epam.digital.data.platform.starter.security.exception.JwtParsingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,39 +47,20 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-import java.util.Map;
-
-import static java.util.stream.Collectors.toList;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
-
 @RestControllerAdvice
 public class ApplicationExceptionHandler extends ResponseEntityExceptionHandler {
 
-  private static final Map<Status, String> externalErrorStatusToResponseCodeMap = Map.of(
-      Status.THIRD_PARTY_SERVICE_UNAVAILABLE, ResponseCode.THIRD_PARTY_SERVICE_UNAVAILABLE,
-      Status.JWT_EXPIRED, ResponseCode.JWT_EXPIRED,
-      Status.JWT_INVALID, ResponseCode.JWT_INVALID);
-
   private final Logger log = LoggerFactory.getLogger(ApplicationExceptionHandler.class);
 
-  private final RestAuditEventsFacade restAuditEventsFacade;
   private final TraceService traceService;
+  private final MessageResolver messageResolver;
 
-  public ApplicationExceptionHandler(RestAuditEventsFacade restAuditEventsFacade, TraceService traceService) {
-    this.restAuditEventsFacade = restAuditEventsFacade;
+  public ApplicationExceptionHandler(TraceService traceService,
+      MessageResolver messageResolver) {
     this.traceService = traceService;
+    this.messageResolver = messageResolver;
   }
 
-  @AuditableException
-  @ExceptionHandler(NoKafkaResponseException.class)
-  public ResponseEntity<DetailedErrorResponse<Void>> handleNoKafkaResponseExceptionException(
-      NoKafkaResponseException exception) {
-    log.error("No response from Kafka", exception);
-    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .body(newDetailedResponse(ResponseCode.TIMEOUT_ERROR));
-  }
-
-  @AuditableException
   @ExceptionHandler(AccessDeniedException.class)
   public ResponseEntity<DetailedErrorResponse<Void>> handleAccessDeniedException(
       AccessDeniedException exception) {
@@ -87,7 +69,6 @@ public class ApplicationExceptionHandler extends ResponseEntityExceptionHandler 
         .body(newDetailedResponse(ResponseCode.FORBIDDEN_OPERATION));
   }
 
-  @AuditableException
   @Override
   protected ResponseEntity<Object> handleMethodArgumentNotValid(
       MethodArgumentNotValidException exception, HttpHeaders headers, HttpStatus status,
@@ -106,7 +87,6 @@ public class ApplicationExceptionHandler extends ResponseEntityExceptionHandler 
     return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(invalidFieldsResponse);
   }
 
-  @AuditableException
   @ExceptionHandler(Exception.class)
   public ResponseEntity<DetailedErrorResponse<Void>> handleException(Exception exception) {
     log.error("Runtime error occurred", exception);
@@ -114,7 +94,6 @@ public class ApplicationExceptionHandler extends ResponseEntityExceptionHandler 
         .body(newDetailedResponse(ResponseCode.RUNTIME_ERROR));
   }
 
-  @AuditableException
   @Override
   protected ResponseEntity<Object> handleHttpMessageNotReadable(
       HttpMessageNotReadableException exception, HttpHeaders headers, HttpStatus status,
@@ -125,7 +104,6 @@ public class ApplicationExceptionHandler extends ResponseEntityExceptionHandler 
         .body(newDetailedResponse(ResponseCode.CLIENT_ERROR));
   }
 
-  @AuditableException
   @Override
   protected ResponseEntity<Object> handleHttpMediaTypeNotSupported(
       HttpMediaTypeNotSupportedException ex, HttpHeaders headers, HttpStatus status,
@@ -135,17 +113,14 @@ public class ApplicationExceptionHandler extends ResponseEntityExceptionHandler 
         .body(newDetailedResponse(ResponseCode.UNSUPPORTED_MEDIA_TYPE));
   }
 
-  @AuditableException
   @ExceptionHandler(JwtParsingException.class)
   public ResponseEntity<DetailedErrorResponse<Void>> handleJwtParsingException(
       Exception exception) {
     log.error("Access Token is not valid", exception);
-    restAuditEventsFacade.auditInvalidAccessToken();
     return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
         .body(newDetailedResponse(ResponseCode.JWT_INVALID));
   }
 
-  @AuditableException
   @ExceptionHandler(AuthenticationException.class)
   public ResponseEntity<DetailedErrorResponse<Void>> handleAuthenticationException(
       AuthenticationException exception) {
@@ -153,8 +128,7 @@ public class ApplicationExceptionHandler extends ResponseEntityExceptionHandler 
     return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
         .body(newDetailedResponse(ResponseCode.AUTHENTICATION_FAILED));
   }
-  
-  @AuditableException
+
   @Override
   protected ResponseEntity<Object> handleNoHandlerFoundException(
       NoHandlerFoundException exception, HttpHeaders headers, HttpStatus status,
@@ -164,40 +138,6 @@ public class ApplicationExceptionHandler extends ResponseEntityExceptionHandler 
         .body(newDetailedResponse(ResponseCode.NOT_FOUND));
   }
 
-  @AuditableException
-  @ExceptionHandler(KafkaInternalServerException.class)
-  public ResponseEntity<DetailedErrorResponse<Void>> handleKafkaInternalException(
-      KafkaInternalServerException kafkaInternalServerException) {
-    log.error("Exceptional status in kafka response", kafkaInternalServerException);
-    Response<?> kafkaResponse = kafkaInternalServerException.getKafkaResponse();
-    String code =
-        externalErrorStatusToResponseCodeMap
-            .getOrDefault(kafkaResponse.getStatus(), ResponseCode.RUNTIME_ERROR);
-    return ResponseEntity.status(kafkaInternalServerException.getHttpStatus())
-        .body(newDetailedResponse(code));
-  }
-
-  @AuditableException
-  @ExceptionHandler(KafkaSecurityValidationFailedException.class)
-  public ResponseEntity<DetailedErrorResponse<Void>> handleKafkaSecurityException(
-      KafkaSecurityValidationFailedException exception) {
-    log.error("Request didn't pass one of security validations", exception);
-    Response<?> kafkaResponse = exception.getKafkaResponse();
-    String code = externalErrorStatusToResponseCodeMap.get(kafkaResponse.getStatus());
-    return ResponseEntity.status(exception.getHttpStatus())
-        .body(newDetailedResponse(code));
-  }
-
-  @AuditableException
-  @ExceptionHandler(NotFoundException.class)
-  public ResponseEntity<DetailedErrorResponse<Void>> handleNotFoundException(
-      NotFoundException exception) {
-    log.error("Resource not found", exception);
-    return ResponseEntity.status(NOT_FOUND)
-        .body(newDetailedResponse(ResponseCode.NOT_FOUND));
-  }
-
-  @AuditableException
   @ExceptionHandler(MethodArgumentTypeMismatchException.class)
   public ResponseEntity<DetailedErrorResponse<Void>> handleMethodArgumentTypeMismatchException(
       Exception exception) {
@@ -206,7 +146,6 @@ public class ApplicationExceptionHandler extends ResponseEntityExceptionHandler 
         .body(newDetailedResponse(ResponseCode.METHOD_ARGUMENT_TYPE_MISMATCH));
   }
 
-  @AuditableException
   @Override
   protected ResponseEntity<Object> handleBindException(
       BindException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
@@ -221,6 +160,18 @@ public class ApplicationExceptionHandler extends ResponseEntityExceptionHandler 
     invalidFieldsResponse.setDetails(new FieldsValidationErrorDetails(details));
     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
         .body(invalidFieldsResponse);
+  }
+
+  @ExceptionHandler(EmailAddressValidationException.class)
+  public ResponseEntity<DetailedValidationErrorResponse> handleEmailAddressValidationException(
+      EmailAddressValidationException exception) {
+    log.error("Email address is not valid", exception);
+    var response = new DetailedValidationErrorResponse();
+    response.setCode(ResponseCode.VALIDATION_ERROR);
+    response.setMessage(exception.getMessage());
+    response.setTraceId(traceService.getRequestId());
+    response.setLocalizedMessage(messageResolver.getMessage(exception.getLocalizedMessage()));
+    return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(response);
   }
 
   private FieldsValidationErrorDetails.FieldError bindErrorToFieldError(ObjectError error) {

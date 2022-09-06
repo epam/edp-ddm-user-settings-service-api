@@ -16,6 +16,9 @@
 
 package com.epam.digital.data.platform.settings.api.config;
 
+import com.epam.digital.data.platform.settings.api.audit.SettingsAuditFacade;
+import com.epam.digital.data.platform.starter.audit.service.AuditService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -27,5 +30,11 @@ public class GenericConfig {
   @Bean
   public Clock clock() {
     return Clock.systemDefaultZone();
+  }
+
+  @Bean
+  public SettingsAuditFacade settingsAuditFacade(AuditService auditService,
+      @Value("${spring.application.name}") String appName, Clock clock) {
+    return new SettingsAuditFacade(auditService, appName, clock);
   }
 }

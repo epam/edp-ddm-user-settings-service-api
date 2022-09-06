@@ -12,6 +12,8 @@ spring:
         enabled: true
         paths: /app/config/config.yaml
         enable-api: false
+      secrets:
+        paths: /app/secrets
 ---
 spring:
   profiles: local

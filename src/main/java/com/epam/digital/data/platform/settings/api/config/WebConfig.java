@@ -16,25 +16,25 @@
 
 package com.epam.digital.data.platform.settings.api.config;
 
+import com.epam.digital.data.platform.settings.api.converter.StringToChannelConverter;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.method.support.HandlerMethodArgumentResolver;
+import org.springframework.format.FormatterRegistry;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import java.util.List;
-
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
-  private HandlerInterceptor livenessProbeStateInterceptor;
+
+  private final HandlerInterceptor livenessProbeStateInterceptor;
 
   public WebConfig(HandlerInterceptor livenessProbeStateInterceptor) {
     this.livenessProbeStateInterceptor = livenessProbeStateInterceptor;
   }
 
   @Override
-  public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
-    resolvers.add(new SecurityContextResolver());
+  public void addFormatters(FormatterRegistry registry) {
+    registry.addConverter(new StringToChannelConverter());
   }
 
   @Override

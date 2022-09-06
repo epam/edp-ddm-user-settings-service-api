@@ -16,14 +16,20 @@
 
 package com.epam.digital.data.platform.settings.api.interceptor;
 
-import com.epam.digital.data.platform.model.core.kafka.Response;
-import com.epam.digital.data.platform.model.core.kafka.Status;
+import static com.epam.digital.data.platform.settings.api.utils.Header.X_ACCESS_TOKEN;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+
 import com.epam.digital.data.platform.settings.api.config.WebConfig;
 import com.epam.digital.data.platform.settings.api.controller.SettingsController;
-import com.epam.digital.data.platform.settings.api.service.impl.SettingsReadByKeycloakIdService;
-import com.epam.digital.data.platform.settings.api.service.impl.SettingsReadService;
-import com.epam.digital.data.platform.settings.api.service.impl.SettingsUpdateService;
+import com.epam.digital.data.platform.settings.api.service.SettingsActivationService;
+import com.epam.digital.data.platform.settings.api.service.SettingsReadService;
+import com.epam.digital.data.platform.settings.api.service.SettingsValidationService;
 import com.epam.digital.data.platform.settings.model.dto.SettingsReadDto;
+import com.epam.digital.data.platform.starter.actuator.livenessprobe.LivenessStateHandler;
 import com.epam.digital.data.platform.starter.security.PermitAllWebSecurityConfig;
 import com.epam.digital.data.platform.starter.security.jwt.TokenParser;
 import com.epam.digital.data.platform.starter.security.jwt.TokenProvider;
@@ -35,13 +41,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
-import com.epam.digital.data.platform.starter.actuator.livenessprobe.LivenessStateHandler;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import java.util.UUID;
 
 @WebMvcTest
 @ContextConfiguration(
@@ -50,27 +51,26 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 @Import({PermitAllWebSecurityConfig.class})
 class LivenessProbeStateInterceptorTest {
 
-  private static final String BASE_URL = "/settings";
+  private static final String BASE_URL = "/api/settings/me";
 
   @Autowired
   private MockMvc mockMvc;
 
   @MockBean
-  private SettingsReadService readService;
-  @MockBean
-  private SettingsUpdateService updateService;
-  @MockBean
-  private SettingsReadByKeycloakIdService readByKeycloakIdService;
+  private SettingsReadService settingsReadService;
   @MockBean
   private LivenessStateHandler livenessStateHandler;
+  @MockBean
+  private SettingsActivationService settingsActivationService;
+  @MockBean
+  private SettingsValidationService settingsValidationService;
 
   @Test
   void expectStateHandlerIsCalledInInterceptor() throws Exception {
-    var mockResponse = new Response<SettingsReadDto>();
-    mockResponse.setStatus(Status.SUCCESS);
-    when(readService.request(any())).thenReturn(mockResponse);
+    when(settingsReadService.findSettingsFromUserToken(any()))
+        .thenReturn(new SettingsReadDto(UUID.randomUUID()));
 
-    mockMvc.perform(get(BASE_URL));
+    mockMvc.perform(get(BASE_URL).header(X_ACCESS_TOKEN.getHeaderName(), "token"));
 
     verify(livenessStateHandler).handleResponse(eq(HttpStatus.OK), any());
   }

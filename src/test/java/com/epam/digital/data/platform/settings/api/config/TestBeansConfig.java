@@ -18,7 +18,7 @@ package com.epam.digital.data.platform.settings.api.config;
 
 import static org.mockito.Mockito.mock;
 
-import com.epam.digital.data.platform.settings.api.audit.RestAuditEventsFacade;
+import com.epam.digital.data.platform.settings.api.audit.SettingsAuditFacade;
 import com.epam.digital.data.platform.settings.api.service.TraceService;
 import com.epam.digital.data.platform.starter.actuator.livenessprobe.LivenessStateHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,8 +39,8 @@ public class TestBeansConfig {
   }
 
   @Bean
-  public RestAuditEventsFacade restAuditEventsFacade() {
-    return mock(RestAuditEventsFacade.class);
+  public SettingsAuditFacade settingsAuditFacade() {
+    return mock(SettingsAuditFacade.class);
   }
 
   @Bean

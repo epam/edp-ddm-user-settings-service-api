@@ -2,14 +2,10 @@ spring:
   zipkin:
     enabled: false
 data-platform:
-  kafka:
-    bootstrap: localhost:9092
-    topic-properties:
-      creation:
-        num-partitions: 1
-        replication-factor: 1
-    ssl:
-      enabled: false
+  datasource:
+    url: jdbc:postgresql://localhost:5432/settings
+    username: postgres
+    password: postgres
 
 server:
   port: 8001

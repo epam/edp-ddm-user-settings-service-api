@@ -58,3 +58,10 @@ keycloak:
     citizen: citizen-portal
     admin: admin
   certificatesEndpoint: /protocol/openid-connect/certs
+
+db:
+  url: citus-master
+  secret: citus-roles-secrets
+  name: settings
+  port: 5432
+  connectionTimeout: 4000

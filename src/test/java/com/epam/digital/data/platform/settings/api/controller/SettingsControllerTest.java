@@ -16,17 +16,21 @@
 
 package com.epam.digital.data.platform.settings.api.controller;
 
-import com.epam.digital.data.platform.model.core.kafka.Response;
-import com.epam.digital.data.platform.model.core.kafka.Status;
 import com.epam.digital.data.platform.settings.api.config.TestBeansConfig;
-import com.epam.digital.data.platform.settings.api.service.impl.SettingsReadByKeycloakIdService;
-import com.epam.digital.data.platform.settings.api.service.impl.SettingsReadService;
-import com.epam.digital.data.platform.settings.api.service.impl.SettingsUpdateService;
+import com.epam.digital.data.platform.settings.api.service.SettingsActivationService;
+import com.epam.digital.data.platform.settings.api.service.SettingsReadService;
+import com.epam.digital.data.platform.settings.api.service.SettingsValidationService;
+import com.epam.digital.data.platform.settings.api.utils.Header;
+import com.epam.digital.data.platform.settings.model.dto.Channel;
+import com.epam.digital.data.platform.settings.model.dto.ChannelReadDto;
+import com.epam.digital.data.platform.settings.model.dto.SettingsEmailInputDto;
+import com.epam.digital.data.platform.settings.model.dto.SettingsDeactivateChannelInputDto;
 import com.epam.digital.data.platform.settings.model.dto.SettingsReadDto;
-import com.epam.digital.data.platform.settings.model.dto.SettingsUpdateInputDto;
-import com.epam.digital.data.platform.settings.model.dto.SettingsUpdateOutputDto;
+import com.epam.digital.data.platform.starter.localization.MessageResolver;
 import com.epam.digital.data.platform.starter.security.PermitAllWebSecurityConfig;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -36,14 +40,17 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.Collections;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.ResultMatcher.matchAll;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -54,89 +61,109 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ContextConfiguration
 class SettingsControllerTest {
 
-  private static final String BASE_URL = "/settings";
+  private static final String BASE_URL = "/api/settings";
 
   private static final UUID SETTINGS_ID = UUID.fromString("123e4567-e89b-12d3-a456-426655440000");
   private static final UUID KEYCLOAK_ID = UUID.fromString("123e4567-e89b-12d3-a456-426655440001");
   private static final String EMAIL = "email@email.com";
-  private static final String PHONE = "0000000000";
+
+  private static final String TOKEN = "token";
 
   @Autowired
   private MockMvc mockMvc;
+  @Autowired
+  private ObjectMapper objectMapper;
 
   @MockBean
-  private SettingsReadService readService;
+  private SettingsReadService settingsReadService;
   @MockBean
-  private SettingsUpdateService updateService;
+  private SettingsActivationService settingsActivationService;
   @MockBean
-  private SettingsReadByKeycloakIdService readByKeycloakIdService;
+  private SettingsValidationService settingsValidationService;
+  @MockBean
+  private MessageResolver messageResolver;
 
   @Test
-  void expectUserSettingsReturnedFromKafka() throws Exception {
-    var response = new Response<SettingsReadDto>();
-    response.setStatus(Status.SUCCESS);
-    var payload = new SettingsReadDto();
-    payload.setSettingsId(SETTINGS_ID);
-    payload.setEmail(EMAIL);
-    payload.setPhone(PHONE);
-    response.setPayload(payload);
-
-    when(readService.request(any())).thenReturn(response);
+  void expectControllerReturnSettingsFromToken() throws Exception {
+    var payload = new SettingsReadDto(SETTINGS_ID);
+    when(settingsReadService.findSettingsFromUserToken(any())).thenReturn(payload);
 
     mockMvc
-        .perform(get(BASE_URL))
-        .andExpect(
-            matchAll(
-                status().isOk(),
-                content().contentType(MediaType.APPLICATION_JSON),
-                jsonPath("$.settings_id", is(SETTINGS_ID.toString())),
-                jsonPath("$.e-mail", is(EMAIL)),
-                jsonPath("$.phone", is(PHONE))));
+        .perform(get(BASE_URL + "/me").header(Header.X_ACCESS_TOKEN.getHeaderName(), TOKEN))
+        .andExpectAll(
+            status().isOk(),
+            content().contentType(MediaType.APPLICATION_JSON),
+            jsonPath("$.settingsId", is(SETTINGS_ID.toString())),
+            jsonPath("$.channels", is(Collections.emptyList())));
   }
 
   @Test
-  void expectReadSettingsByIdIsReturnedFromKafka() throws Exception {
-    var response = new Response<SettingsReadDto>();
-    response.setStatus(Status.SUCCESS);
-    var payload = new SettingsReadDto();
-    payload.setSettingsId(SETTINGS_ID);
-    payload.setEmail(EMAIL);
-    payload.setPhone(PHONE);
-    response.setPayload(payload);
+  void expectControllerReturnSettingsByUserId() throws Exception {
+    var channelDto = new ChannelReadDto();
+    channelDto.setChannel(Channel.EMAIL);
+    channelDto.setActivated(true);
+    channelDto.setAddress(EMAIL);
+    var payload = new SettingsReadDto(SETTINGS_ID, Collections.singletonList(channelDto));
 
-    when(readByKeycloakIdService.request(any())).thenReturn(response);
+    when(settingsReadService.findSettingsByUserId(KEYCLOAK_ID)).thenReturn(payload);
 
     mockMvc
         .perform(get(BASE_URL + "/" + KEYCLOAK_ID))
-        .andExpect(
-            matchAll(
-                status().isOk(),
-                content().contentType(MediaType.APPLICATION_JSON),
-                jsonPath("$.settings_id", is(SETTINGS_ID.toString())),
-                jsonPath("$.e-mail", is(EMAIL)),
-                jsonPath("$.phone", is(PHONE))));
+        .andExpectAll(
+            status().isOk(),
+            content().contentType(MediaType.APPLICATION_JSON),
+            jsonPath("$.settingsId", is(SETTINGS_ID.toString())),
+            jsonPath("$.channels[0].channel", is(Channel.EMAIL.getValue())),
+            jsonPath("$.channels[0].activated", is(true)),
+            jsonPath("$.channels[0].address", is(EMAIL)),
+            jsonPath("$.channels[0].deactivationReason").doesNotExist());
   }
 
   @Test
-  void expectUserSettingsIdIsReturnedOnSuccessfulUpdate() throws Exception {
-    var input = new SettingsUpdateInputDto();
-    input.setEmail(EMAIL);
-    input.setPhone(PHONE);
-
-    var response = new Response<SettingsUpdateOutputDto>();
-    response.setStatus(Status.SUCCESS);
-    response.setPayload(new SettingsUpdateOutputDto(SETTINGS_ID));
-
-    when(updateService.request(any())).thenReturn(response);
-
-    String requestBodyJson = String.format("{\"e-mail\": \"%s\", \"phone\": \"%s\"}", EMAIL, PHONE);
+  void expectControllerActivateEmailChannel() throws Exception {
+    var payload = new SettingsEmailInputDto();
+    payload.setAddress(EMAIL);
 
     mockMvc
-        .perform(put(BASE_URL).content(requestBodyJson).contentType(MediaType.APPLICATION_JSON))
-        .andExpect(
-            matchAll(
-                status().isOk(),
-                content().contentType(MediaType.APPLICATION_JSON),
-                jsonPath("$.settings_id", is(SETTINGS_ID.toString()))));
+        .perform(post(BASE_URL + "/me/channels/email/activate").header(
+                Header.X_ACCESS_TOKEN.getHeaderName(), TOKEN)
+            .content(objectMapper.writeValueAsString(payload))
+            .contentType(MediaType.APPLICATION_JSON))
+        .andExpectAll(
+            status().isOk());
+
+    var captor = ArgumentCaptor.forClass(SettingsEmailInputDto.class);
+    verify(settingsActivationService).activateEmail(captor.capture(), eq(TOKEN));
+    assertThat(captor.getValue().getAddress()).isEqualTo(EMAIL);
+  }
+
+  @Test
+  void expectControllerActivateDiiaChannel() throws Exception {
+    mockMvc
+        .perform(
+            post(BASE_URL + "/me/channels/diia/activate")
+                .header(Header.X_ACCESS_TOKEN.getHeaderName(), TOKEN))
+        .andExpectAll(status().isOk());
+
+    verify(settingsActivationService).activateDiia(TOKEN);
+  }
+
+  @Test
+  void expectControllerDeactivateChannel() throws Exception {
+    var payload = new SettingsDeactivateChannelInputDto();
+    payload.setDeactivationReason("Reason");
+
+    mockMvc
+        .perform(
+            post(BASE_URL + "/me/channels/diia/deactivate")
+                .header(Header.X_ACCESS_TOKEN.getHeaderName(), TOKEN)
+                .content(objectMapper.writeValueAsString(payload))
+                .contentType(MediaType.APPLICATION_JSON))
+        .andExpectAll(status().isOk());
+
+    var captor = ArgumentCaptor.forClass(SettingsDeactivateChannelInputDto.class);
+    verify(settingsActivationService)
+        .deactivateChannel(eq(Channel.DIIA), captor.capture(), eq(TOKEN));
+    assertThat(captor.getValue().getDeactivationReason()).isEqualTo("Reason");
   }
 }

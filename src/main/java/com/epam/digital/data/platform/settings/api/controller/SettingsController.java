@@ -16,79 +16,94 @@
 
 package com.epam.digital.data.platform.settings.api.controller;
 
-import com.epam.digital.data.platform.model.core.kafka.Request;
-import com.epam.digital.data.platform.model.core.kafka.SecurityContext;
-import com.epam.digital.data.platform.settings.api.audit.AuditableController;
-import com.epam.digital.data.platform.settings.api.annotation.HttpSecurityContext;
-import com.epam.digital.data.platform.settings.api.service.impl.SettingsReadService;
-import com.epam.digital.data.platform.settings.api.service.impl.SettingsReadByKeycloakIdService;
-import com.epam.digital.data.platform.settings.api.service.impl.SettingsUpdateService;
-import com.epam.digital.data.platform.settings.api.utils.ResponseResolverUtil;
-import com.epam.digital.data.platform.settings.model.dto.SettingsReadByKeycloakIdInputDto;
+import com.epam.digital.data.platform.settings.api.service.SettingsActivationService;
+import com.epam.digital.data.platform.settings.api.service.SettingsReadService;
+import com.epam.digital.data.platform.settings.api.service.SettingsValidationService;
+import com.epam.digital.data.platform.settings.model.dto.Channel;
+import com.epam.digital.data.platform.settings.model.dto.SettingsEmailInputDto;
+import com.epam.digital.data.platform.settings.model.dto.SettingsDeactivateChannelInputDto;
 import com.epam.digital.data.platform.settings.model.dto.SettingsReadDto;
-import com.epam.digital.data.platform.settings.model.dto.SettingsUpdateInputDto;
-import com.epam.digital.data.platform.settings.model.dto.SettingsUpdateOutputDto;
-import javax.validation.Valid;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.validation.Valid;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/settings")
+@RequestMapping("/api/settings")
 public class SettingsController {
 
   private final Logger log = LoggerFactory.getLogger(SettingsController.class);
 
-  private final SettingsReadService readService;
-  private final SettingsUpdateService updateService;
-  private final SettingsReadByKeycloakIdService readByKeycloakIdService;
+  private final SettingsReadService settingsReadService;
+  private final SettingsActivationService activationService;
+  private final SettingsValidationService validationService;
 
-  public SettingsController(
-      SettingsReadService readService,
-      SettingsUpdateService updateService,
-      SettingsReadByKeycloakIdService readByKeycloakIdService) {
-    this.readService = readService;
-    this.updateService = updateService;
-    this.readByKeycloakIdService = readByKeycloakIdService;
+  public SettingsController(SettingsReadService settingsReadService,
+      SettingsActivationService activationService,
+      SettingsValidationService validationService) {
+    this.settingsReadService = settingsReadService;
+    this.activationService = activationService;
+    this.validationService = validationService;
   }
 
-  @AuditableController
-  @GetMapping
-  public ResponseEntity<SettingsReadDto> findUserSettings(
-      @HttpSecurityContext SecurityContext securityContext) {
-    log.info("Get settings called");
-    var request = new Request<Void>(null, securityContext);
-    var response = readService.request(request);
-    return ResponseResolverUtil.getHttpResponseFromKafka(response);
+  @GetMapping("/me")
+  public ResponseEntity<SettingsReadDto> findUserSettingsFromToken(
+      @Parameter(hidden = true) @RequestHeader("X-Access-Token") String accessToken) {
+    log.info("Get user personal settings");
+    var response = settingsReadService.findSettingsFromUserToken(accessToken);
+    return ResponseEntity.status(HttpStatus.OK).body(response);
   }
 
-  @AuditableController
-  @PutMapping
-  public ResponseEntity<SettingsUpdateOutputDto> updateUserSettings(
-      @Valid @RequestBody SettingsUpdateInputDto input,
-      @HttpSecurityContext SecurityContext securityContext) {
-    log.info("Put settings called");
-    var request = new Request<>(input, securityContext);
-    var response = updateService.request(request);
-    return ResponseResolverUtil.getHttpResponseFromKafka(response);
+  @GetMapping("/{userId}")
+  public ResponseEntity<SettingsReadDto> findUserSettingsById(@PathVariable("userId") UUID userId) {
+    log.info("Get settings by user id");
+    var response = settingsReadService.findSettingsByUserId(userId);
+    return ResponseEntity.status(HttpStatus.OK).body(response);
   }
 
-  @AuditableController
-  @GetMapping("/{keycloakId}")
-  public ResponseEntity<SettingsReadDto> findUserSettingsByKeycloakId(
-      @PathVariable("keycloakId") UUID keycloakId,
-      @HttpSecurityContext SecurityContext securityContext) {
-    log.info("Get settings by keycloak id called");
-    var request = new Request<>(new SettingsReadByKeycloakIdInputDto(keycloakId), securityContext);
-    var response = readByKeycloakIdService.request(request);
-    return ResponseResolverUtil.getHttpResponseFromKafka(response);
+  @PostMapping("/me/channels/email/activate")
+  public ResponseEntity<Void> activateEmailChannel(
+      @RequestBody @Valid SettingsEmailInputDto input,
+      @Parameter(hidden = true) @RequestHeader("X-Access-Token") String accessToken) {
+    log.info("Activate email channel is called");
+    activationService.activateEmail(input, accessToken);
+    return ResponseEntity.status(HttpStatus.OK).build();
+  }
+
+  @PostMapping("/me/channels/diia/activate")
+  public ResponseEntity<Void> activateDiiaChannel(
+      @Parameter(hidden = true) @RequestHeader("X-Access-Token") String accessToken) {
+    log.info("Activate diia channel is called");
+    activationService.activateDiia(accessToken);
+    return ResponseEntity.status(HttpStatus.OK).build();
+  }
+
+  @PostMapping("/me/channels/{channel}/deactivate")
+  public ResponseEntity<Void> deactivateChannel(
+      @PathVariable("channel") Channel channel,
+      @RequestBody @Valid SettingsDeactivateChannelInputDto input,
+      @Parameter(hidden = true) @RequestHeader("X-Access-Token") String accessToken) {
+    log.info("Deactivate {} channel called", channel);
+    activationService.deactivateChannel(channel, input, accessToken);
+    return ResponseEntity.status(HttpStatus.OK).build();
+  }
+
+  @PostMapping("/me/channels/email/validate")
+  public ResponseEntity<Void> validateEmailAddress(
+      @RequestBody @Valid SettingsEmailInputDto input) {
+    log.info("Email validation is called");
+    validationService.validateEmailAddress(input);
+    return ResponseEntity.status(HttpStatus.OK).build();
   }
 }
