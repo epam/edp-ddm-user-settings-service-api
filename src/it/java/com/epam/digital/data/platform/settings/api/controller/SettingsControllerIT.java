@@ -20,171 +20,175 @@ import static com.epam.digital.data.platform.settings.api.TestUtils.readClassPat
 import static com.epam.digital.data.platform.settings.api.utils.Header.X_ACCESS_TOKEN;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.epam.digital.data.platform.model.core.kafka.Request;
-import com.epam.digital.data.platform.model.core.kafka.Response;
-import com.epam.digital.data.platform.model.core.kafka.Status;
-import com.epam.digital.data.platform.settings.model.dto.SettingsReadByKeycloakIdInputDto;
-import com.epam.digital.data.platform.settings.model.dto.SettingsReadDto;
-import com.epam.digital.data.platform.settings.model.dto.SettingsUpdateInputDto;
-import com.epam.digital.data.platform.settings.model.dto.SettingsUpdateOutputDto;
-import com.epam.digital.data.platform.starter.kafka.config.properties.KafkaProperties;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.epam.digital.data.platform.settings.api.repository.NotificationChannelRepository;
+import com.epam.digital.data.platform.settings.model.dto.Channel;
+import com.epam.digital.data.platform.settings.model.dto.SettingsDeactivateChannelInputDto;
+import com.epam.digital.data.platform.settings.model.dto.SettingsEmailInputDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.UUID;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.kafka.requestreply.ReplyingKafkaTemplate;
-import org.springframework.kafka.requestreply.RequestReplyFuture;
-import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@AutoConfigureEmbeddedDatabase(provider = AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY)
+@Transactional
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
-@EmbeddedKafka(partitions = 1, brokerProperties = {"listeners=PLAINTEXT://localhost:9092",
-    "port=9092"})
 class SettingsControllerIT {
 
-  private static final String BASE_URL = "/settings";
-  private static final UUID SETTINGS_ID = UUID.fromString("123e4567-e89b-12d3-a456-426655440000");
-  private static final String EMAIL = "name@email.com";
-  private static final String PHONE = "0000000000";
+  private static final String BASE_URL = "/api/settings";
+  private static final UUID SETTINGS_ID_1 = UUID.fromString("321e7654-e89b-12d3-a456-426655441111");
+  private static final String EMAIL_1 = "settings@gmail.com";
+  private static final UUID SETTINGS_ID_2 = UUID.fromString("7f18fd5f-d68e-4609-85a8-eb5745488ac2");
+  private static final String EMAIL_2 = "settings2@yahoo.com";
+
 
   private static final UUID SEARCHED_KEYCLOAK_ID =
-      UUID.fromString("11111111-1111-1111-1111-111111111111");
+      UUID.fromString("4cb2fb36-df5a-474d-9e82-0a9848231bd6");
 
-  private static String OFFICER_TOKEN;
+  private static String TOKEN;
 
   @Autowired
   MockMvc mockMvc;
   @Autowired
-  KafkaProperties kafkaProperties;
-  @Autowired
   ObjectMapper objectMapper;
-
-  @MockBean
-  ReplyingKafkaTemplate replyingKafkaTemplate;
-
-  @Captor
-  ArgumentCaptor<ProducerRecord> captor;
+  @Autowired
+  NotificationChannelRepository notificationChannelRepository;
 
   @BeforeAll
   static void init() throws IOException {
-    OFFICER_TOKEN = readClassPathResource("/officerToken.txt");
+    TOKEN = readClassPathResource("/token.txt");
   }
 
   @Test
-  void shouldReadDataThroughKafkaUsingRequestReplyPattern() throws Exception {
-
-    // given
-    var response = wrapToResponse(mockSettingsReadDto(), Status.SUCCESS);
-
-    RequestReplyFuture<String, Request<SettingsReadDto>, String> replyFuture = new RequestReplyFuture<>();
-    replyFuture.set(wrapToConsumerRecord(response));
-
-    when(replyingKafkaTemplate.sendAndReceive((ProducerRecord) any())).thenReturn(replyFuture);
-
-    // when
+  void shouldFindSettingsFromToken() throws Exception {
     mockMvc
-        .perform(get(BASE_URL)
-            .header(X_ACCESS_TOKEN.getHeaderName(), OFFICER_TOKEN))
+        .perform(get(BASE_URL + "/me").header(X_ACCESS_TOKEN.getHeaderName(), TOKEN))
         .andExpectAll(
             status().isOk(),
             content().contentType(MediaType.APPLICATION_JSON),
-            jsonPath("$.settings_id", is(SETTINGS_ID.toString())),
-            jsonPath("$.e-mail", is(EMAIL)),
-            jsonPath("$.phone", is(PHONE)));
-
-    // then
-    verify(replyingKafkaTemplate).sendAndReceive(captor.capture());
-    var procedureRecord = captor.getValue();
-
-    assertThat(procedureRecord.topic())
-        .isEqualTo(kafkaProperties.getRequestReply().getTopics().get("read-settings").getRequest());
-
-    assertThat(((Request) procedureRecord.value()).getSecurityContext().getAccessToken())
-        .isEqualTo(OFFICER_TOKEN);
-    assertThat(((Request) procedureRecord.value()).getPayload()).isNull();
-
-    var headers = procedureRecord.headers().toArray();
-    assertThat(headers).hasSize(1);
-    assertThat(headers[0].key()).isEqualTo("kafka_replyTopic");
-    assertThat(new String(headers[0].value(), StandardCharsets.UTF_8))
-        .isEqualTo(kafkaProperties.getRequestReply().getTopics().get("read-settings").getReply());
+            jsonPath("$.settingsId", is(SETTINGS_ID_1.toString())),
+            jsonPath("$.channels[0].channel", is(Channel.EMAIL.getValue())),
+            jsonPath("$.channels[0].activated", is(true)),
+            jsonPath("$.channels[0].address", is(EMAIL_1)),
+            jsonPath("$.channels[0].deactivationReason").doesNotExist(),
+            jsonPath("$.channels[1].channel", is(Channel.DIIA.getValue())),
+            jsonPath("$.channels[1].activated", is(false)),
+            jsonPath("$.channels[1].address").doesNotExist(),
+            jsonPath("$.channels[1].deactivationReason", is("User deactivated")));
   }
 
   @Test
-  void shouldReadDataByKeycloakIdThroughKafkaRequestReply() throws Exception {
-    // given
-    var response = wrapToResponse(mockSettingsReadDto(), Status.SUCCESS);
-
-    RequestReplyFuture<String, Request<SettingsReadByKeycloakIdInputDto>, String> replyFuture =
-        new RequestReplyFuture<>();
-    replyFuture.set(wrapToConsumerRecord(response));
-    when(replyingKafkaTemplate.sendAndReceive((ProducerRecord) any())).thenReturn(replyFuture);
-
-    // when
+  void shouldFindSettingsByKeycloakId() throws Exception {
     mockMvc
-            .perform(get(BASE_URL + "/" + SEARCHED_KEYCLOAK_ID.toString())
-                    .header(X_ACCESS_TOKEN.getHeaderName(), OFFICER_TOKEN))
-            .andExpectAll(
-                    status().isOk(),
-                    content().contentType(MediaType.APPLICATION_JSON),
-                    jsonPath("$.settings_id", is(SETTINGS_ID.toString())),
-                    jsonPath("$.e-mail", is(EMAIL)),
-                    jsonPath("$.phone", is(PHONE)));
+        .perform(
+            get(BASE_URL + "/" + SEARCHED_KEYCLOAK_ID)
+                .header(X_ACCESS_TOKEN.getHeaderName(), TOKEN))
+        .andExpectAll(
+            status().isOk(),
+            content().contentType(MediaType.APPLICATION_JSON),
+            jsonPath("$.settingsId", is(SETTINGS_ID_2.toString())),
+            jsonPath("$.channels[0].channel", is(Channel.EMAIL.getValue())),
+            jsonPath("$.channels[0].activated", is(true)),
+            jsonPath("$.channels[0].address", is(EMAIL_2)),
+            jsonPath("$.channels[0].deactivationReason").doesNotExist());
+  }
 
-    // then
-    verify(replyingKafkaTemplate).sendAndReceive(captor.capture());
-    var procedureRecord = captor.getValue();
+  @Test
+  void shouldActivateEmailChannel() throws Exception {
+    var input = new SettingsEmailInputDto();
+    input.setAddress("new@email.com");
 
-    assertThat(procedureRecord.topic())
-        .isEqualTo(
-            kafkaProperties
-                .getRequestReply()
-                .getTopics()
-                .get("read-settings-by-keycloak-id")
-                .getRequest());
+    mockMvc
+        .perform(post(BASE_URL + "/me/channels/email/activate")
+            .header(X_ACCESS_TOKEN.getHeaderName(), TOKEN)
+            .content(objectMapper.writeValueAsString(input))
+            .contentType(MediaType.APPLICATION_JSON))
+        .andExpectAll(
+            status().isOk());
 
-    assertThat(((Request) procedureRecord.value()).getSecurityContext().getAccessToken())
-        .isEqualTo(OFFICER_TOKEN);
-    var kafkaInputDto =
-        (SettingsReadByKeycloakIdInputDto) ((Request<?>) procedureRecord.value()).getPayload();
-    assertThat(kafkaInputDto).isEqualTo(new SettingsReadByKeycloakIdInputDto(SEARCHED_KEYCLOAK_ID));
+    var activatedChannel =
+        notificationChannelRepository.findBySettingsIdAndChannel(SETTINGS_ID_1, Channel.EMAIL).get();
 
-    var headers = procedureRecord.headers().toArray();
-    assertThat(headers).hasSize(1);
-    assertThat(headers[0].key()).isEqualTo("kafka_replyTopic");
-    assertThat(new String(headers[0].value(), StandardCharsets.UTF_8))
-        .isEqualTo(
-            kafkaProperties
-                .getRequestReply()
-                .getTopics()
-                .get("read-settings-by-keycloak-id")
-                .getReply());
+    assertThat(activatedChannel.getSettingsId()).isEqualTo(SETTINGS_ID_1);
+    assertThat(activatedChannel.getChannel()).isEqualTo(Channel.EMAIL);
+    assertThat(activatedChannel.getAddress()).isEqualTo("new@email.com");
+    assertThat(activatedChannel.isActivated()).isTrue();
+    assertThat(activatedChannel.getDeactivationReason()).isNull();
+  }
+
+  @Test
+  void shouldActivateDiiaChannel() throws Exception {
+    mockMvc
+        .perform(
+            post(BASE_URL + "/me/channels/diia/activate")
+                .header(X_ACCESS_TOKEN.getHeaderName(), TOKEN))
+        .andExpectAll(status().isOk());
+
+    var activatedChannel =
+            notificationChannelRepository.findBySettingsIdAndChannel(SETTINGS_ID_1, Channel.DIIA).get();
+
+    assertThat(activatedChannel.getSettingsId()).isEqualTo(SETTINGS_ID_1);
+    assertThat(activatedChannel.getChannel()).isEqualTo(Channel.DIIA);
+    assertThat(activatedChannel.getAddress()).isNull();
+    assertThat(activatedChannel.isActivated()).isTrue();
+    assertThat(activatedChannel.getDeactivationReason()).isNull();
+  }
+
+  @Test
+  void shouldDeactivateChannel() throws Exception {
+    var input = new SettingsDeactivateChannelInputDto();
+    input.setDeactivationReason("User deactivated");
+
+    mockMvc
+        .perform(
+            post(BASE_URL + "/me/channels/email/deactivate")
+                .header(X_ACCESS_TOKEN.getHeaderName(), TOKEN)
+                .content(objectMapper.writeValueAsString(input))
+                .contentType(MediaType.APPLICATION_JSON))
+        .andExpectAll(status().isOk());
+
+    var activatedChannel =
+            notificationChannelRepository.findBySettingsIdAndChannel(SETTINGS_ID_1, Channel.DIIA).get();
+
+    assertThat(activatedChannel.getSettingsId()).isEqualTo(SETTINGS_ID_1);
+    assertThat(activatedChannel.getChannel()).isEqualTo(Channel.DIIA);
+    assertThat(activatedChannel.getAddress()).isNull();
+    assertThat(activatedChannel.isActivated()).isFalse();
+    assertThat(activatedChannel.getDeactivationReason()).isEqualTo("User deactivated");
+  }
+
+  @Test
+  void shouldFailEmailAddressValidationWhenAddressIsEmpty() throws Exception {
+    var input = new SettingsEmailInputDto();
+    input.setAddress("");
+
+    mockMvc
+        .perform(
+            post(BASE_URL + "/me/channels/email/validate")
+                .header(X_ACCESS_TOKEN.getHeaderName(), TOKEN)
+                .content(objectMapper.writeValueAsString(input))
+                .contentType(MediaType.APPLICATION_JSON))
+        .andExpectAll(status().isUnprocessableEntity(),
+            content().contentType(MediaType.APPLICATION_JSON),
+            jsonPath("$.message", is("Email address is empty")),
+            jsonPath("$.localizedMessage", is("Поле обов'язкове")));
   }
 
   @Test
@@ -192,101 +196,5 @@ class SettingsControllerIT {
     mockMvc
         .perform(get(BASE_URL))
         .andExpect(status().isUnauthorized());
-  }
-
-  @Test
-  void shouldSendDataThroughKafkaUsingRequestReplyPattern() throws Exception {
-
-    // given
-    var response = wrapToResponse(mockSettingsUpdateOutputDto(), Status.SUCCESS);
-
-    RequestReplyFuture<String, Request<SettingsUpdateInputDto>, String> replyFuture = new RequestReplyFuture<>();
-    replyFuture.set(wrapToConsumerRecord(response));
-
-    when(replyingKafkaTemplate.sendAndReceive((ProducerRecord) any())).thenReturn(replyFuture);
-
-    // when
-    mockMvc
-        .perform(put(BASE_URL)
-            .header(X_ACCESS_TOKEN.getHeaderName(), OFFICER_TOKEN)
-            .content(objectMapper.writeValueAsString(mockSettingsUpdateInputDto()))
-            .contentType(MediaType.APPLICATION_JSON))
-        .andExpectAll(
-            status().isOk(),
-            content().contentType(MediaType.APPLICATION_JSON),
-            jsonPath("$.settings_id", is(SETTINGS_ID.toString())));
-
-    // then
-    verify(replyingKafkaTemplate).sendAndReceive(captor.capture());
-    var procedureRecord = captor.getValue();
-
-    assertThat(procedureRecord.topic())
-        .isEqualTo(kafkaProperties.getRequestReply().getTopics().get("update-settings").getRequest());
-
-    assertThat(((Request) procedureRecord.value()).getSecurityContext().getAccessToken())
-        .isEqualTo(OFFICER_TOKEN);
-    assertThat(((Request) procedureRecord.value()).getPayload()).isEqualTo(mockSettingsUpdateInputDto());
-
-    var headers = procedureRecord.headers().toArray();
-    assertThat(headers).hasSize(1);
-    assertThat(headers[0].key()).isEqualTo("kafka_replyTopic");
-    assertThat(new String(headers[0].value(), StandardCharsets.UTF_8))
-        .isEqualTo(kafkaProperties.getRequestReply().getTopics().get("update-settings").getReply());
-  }
-
-  @Test
-  void returnTimeoutErrorWhenFutureDoesNotReturnAnyValue() throws Exception {
-    
-    // given
-    var replyFuture = mock(RequestReplyFuture.class);
-    when(replyFuture.get()).thenThrow(new RuntimeException());
-    when(replyingKafkaTemplate.sendAndReceive((ProducerRecord) any())).thenReturn(replyFuture);
-    
-    // when - then
-    mockMvc
-        .perform(put(BASE_URL)
-            .header(X_ACCESS_TOKEN.getHeaderName(), OFFICER_TOKEN)
-            .content(objectMapper.writeValueAsString(mockSettingsUpdateInputDto()))
-            .contentType(MediaType.APPLICATION_JSON))
-        .andExpectAll(
-            status().isInternalServerError(),
-            content().contentType(MediaType.APPLICATION_JSON),
-            jsonPath("$.code", is("TIMEOUT_ERROR")));
-  }
-
-  private SettingsUpdateInputDto mockSettingsUpdateInputDto() {
-    SettingsUpdateInputDto dto = new SettingsUpdateInputDto();
-    dto.setEmail(EMAIL);
-    dto.setPhone(PHONE);
-    dto.setCommunicationAllowed(false);
-    return dto;
-  }
-
-  private SettingsUpdateOutputDto mockSettingsUpdateOutputDto() {
-    SettingsUpdateOutputDto dto = new SettingsUpdateOutputDto();
-    dto.setSettingsId(SETTINGS_ID);
-    return dto;
-  }
-
-  private SettingsReadDto mockSettingsReadDto() {
-    SettingsReadDto dto = new SettingsReadDto();
-    dto.setSettingsId(SETTINGS_ID);
-    dto.setEmail(EMAIL);
-    dto.setPhone(PHONE);
-    dto.setCommunicationAllowed(false);
-    return dto;
-  }
-
-  private <T> Response<T> wrapToResponse(T dto, Status status) {
-    var response = new Response<T>();
-    response.setPayload(dto);
-    response.setStatus(status);
-    return response;
-  }
-
-  private <T> ConsumerRecord<String, String> wrapToConsumerRecord(Response<T> response)
-      throws JsonProcessingException {
-    String responseStr = objectMapper.writeValueAsString(response);
-    return new ConsumerRecord<>("topic", 1, 0, "key", responseStr);
   }
 }

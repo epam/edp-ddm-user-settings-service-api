@@ -1,5 +1,5 @@
 /*
- *  Copyright 2021 EPAM Systems.
+ *  Copyright 2022 EPAM Systems.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -14,15 +14,15 @@
  *  limitations under the License.
  */
 
-package com.epam.digital.data.platform.settings.api.annotation;
+package com.epam.digital.data.platform.settings.api.converter;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import com.epam.digital.data.platform.settings.model.dto.Channel;
+import org.springframework.core.convert.converter.Converter;
 
-@Target(ElementType.PARAMETER)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface HttpSecurityContext {
+public class StringToChannelConverter implements Converter<String, Channel> {
 
+  @Override
+  public Channel convert(String source) {
+    return Channel.valueOf(source.toUpperCase());
+  }
 }

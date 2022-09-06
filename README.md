@@ -1,14 +1,14 @@
 # user-settings-service-api
 
-This service provides web api for processing account settings of specific system user (email, phone etc.).
-
-### Related components:
-* `user-settings-service-persistence` - service, which interacts with database
-* Kafka for message exchanging with `user-settings-service-persistence`
+This service provides web api and interacts with the database for processing account settings of specific system user (email, phone etc.).
 
 ### Local development:
 ###### Prerequisites:
-* Kafka is configured and running
+* Database `settings` is configured and running
+
+###### Settings database setup:
+1. Create database `settings`
+1. Run `initial-db-setup` script from the `citus` repository
 
 ###### Configuration:
 1. Check `src/main/resources/application-local.yaml` and replace Kafka URL if needed (properties data-platform.kafka.bootstrap and audit.kafka.bootstrap)

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2021 EPAM Systems.
+ *  Copyright 2022 EPAM Systems.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,9 +16,17 @@
 
 package com.epam.digital.data.platform.settings.api.exception;
 
-public class NoKafkaResponseException extends RuntimeException {
+public class EmailAddressValidationException extends RuntimeException {
 
-  public NoKafkaResponseException(String message, Exception e) {
-    super(message, e);
+  private final String localizedMessage;
+
+  public EmailAddressValidationException(String message, String localizedMessage) {
+    super(message);
+    this.localizedMessage = localizedMessage;
+  }
+
+  @Override
+  public String getLocalizedMessage() {
+    return localizedMessage;
   }
 }

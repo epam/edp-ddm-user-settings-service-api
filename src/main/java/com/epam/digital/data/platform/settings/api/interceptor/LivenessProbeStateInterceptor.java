@@ -28,7 +28,7 @@ import javax.servlet.http.HttpServletResponse;
 @Component
 public class LivenessProbeStateInterceptor implements HandlerInterceptor {
 
-  private LivenessStateHandler livenessStateHandler;
+  private final LivenessStateHandler livenessStateHandler;
 
   public LivenessProbeStateInterceptor(LivenessStateHandler livenessStateHandler) {
     this.livenessStateHandler = livenessStateHandler;

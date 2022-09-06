@@ -1,16 +1,17 @@
 spring:
   zipkin:
     enabled: false
+  autoconfigure:
+    exclude: com.epam.digital.data.platform.starter.database.DatabaseAutoConfiguration
+  sql:
+    init:
+      mode: always
 
 data-platform:
-  kafka:
-    bootstrap: localhost:9092
-    topic-properties:
-      creation:
-        num-partitions: 1
-        replication-factor: 1
-    ssl:
-      enabled: false
+  datasource:
+    url: ${spring.datasource.url}
+    username: ${spring.datasource.username}
+    password: ${spring.datasource.password}
       
 audit:
   kafka:
@@ -19,4 +20,3 @@ audit:
     schema-registry-url: http://localhost:8081
     ssl:
       enabled: false
-      
