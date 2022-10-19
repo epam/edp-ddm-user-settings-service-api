@@ -1,3 +1,4 @@
+{{- if or (not .Values.global.excludePortals) (not (has "citizen" .Values.global.excludePortals)) }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -21,3 +22,4 @@ spec:
   selector:
     app: {{ .Values.name }}
   type: {{ default "ClusterIP" (.Values.service.type | quote) }}
+{{- end }}

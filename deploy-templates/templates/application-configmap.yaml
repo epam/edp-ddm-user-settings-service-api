@@ -1,3 +1,4 @@
+{{- if or (not .Values.global.excludePortals) (not (has "citizen" .Values.global.excludePortals)) }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -31,3 +32,4 @@ data:
           keystore-certificate: {{ .Values.kafka.sslUserCertificate }}
           keystore-key: {{ .Values.kafka.sslUserKey }}
           truststore-certificate: {{ .Values.kafka.sslClusterCertificate }}
+{{- end }}

@@ -1,3 +1,4 @@
+{{- if or (not .Values.global.excludePortals) (not (has "citizen" .Values.global.excludePortals)) }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -122,3 +123,4 @@ spec:
                 path: data-platform.datasource.password
               - key: settRoleName
                 path: data-platform.datasource.username
+{{- end }}
