@@ -1,3 +1,4 @@
+{{- if or (not .Values.global.excludePortals) (not (has "citizen" .Values.global.excludePortals)) }}
 kind: RequestAuthentication
 apiVersion: security.istio.io/v1beta1
 metadata:
@@ -13,3 +14,4 @@ spec:
         - name: X-Access-Token
       issuer: {{ template "issuer.citizen" . }}
       jwksUri: {{ template "jwksUri.citizen" . }}
+{{- end }}

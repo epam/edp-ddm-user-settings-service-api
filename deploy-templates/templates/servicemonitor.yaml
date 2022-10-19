@@ -1,3 +1,4 @@
+{{- if or (not .Values.global.excludePortals) (not (has "citizen" .Values.global.excludePortals)) }}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -21,3 +22,4 @@ spec:
   selector:
     matchLabels:
       app: {{ .Values.name }}
+{{- end }}
