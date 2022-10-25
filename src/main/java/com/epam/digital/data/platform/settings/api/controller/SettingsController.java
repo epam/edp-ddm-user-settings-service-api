@@ -16,18 +16,20 @@
 
 package com.epam.digital.data.platform.settings.api.controller;
 
-import com.epam.digital.data.platform.settings.api.service.SettingsActivationService;
 import com.epam.digital.data.platform.settings.api.service.ChannelVerificationService;
+import com.epam.digital.data.platform.settings.api.service.SettingsActivationService;
 import com.epam.digital.data.platform.settings.api.service.SettingsReadService;
 import com.epam.digital.data.platform.settings.api.service.SettingsValidationService;
-import com.epam.digital.data.platform.settings.model.dto.ActivateEmailInputDto;
+import com.epam.digital.data.platform.settings.model.dto.ActivateChannelInputDto;
 import com.epam.digital.data.platform.settings.model.dto.Channel;
-import com.epam.digital.data.platform.settings.model.dto.VerificationCodeExpirationDto;
-import com.epam.digital.data.platform.settings.model.dto.SettingsEmailInputDto;
 import com.epam.digital.data.platform.settings.model.dto.SettingsDeactivateChannelInputDto;
+import com.epam.digital.data.platform.settings.model.dto.SettingsEmailInputDto;
 import com.epam.digital.data.platform.settings.model.dto.SettingsReadDto;
+import com.epam.digital.data.platform.settings.model.dto.VerificationCodeExpirationDto;
 import com.epam.digital.data.platform.settings.model.dto.VerificationInputDto;
 import io.swagger.v3.oas.annotations.Parameter;
+import java.util.UUID;
+import javax.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -39,9 +41,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import javax.validation.Valid;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/settings")
@@ -79,20 +78,12 @@ public class SettingsController {
     return ResponseEntity.status(HttpStatus.OK).body(response);
   }
 
-  @PostMapping("/me/channels/email/activate")
-  public ResponseEntity<Void> activateEmailChannel(
-      @RequestBody @Valid ActivateEmailInputDto input,
-      @Parameter(hidden = true) @RequestHeader("X-Access-Token") String accessToken) {
-    log.info("Activate email channel is called");
-    activationService.activateEmail(input, accessToken);
-    return ResponseEntity.status(HttpStatus.OK).build();
-  }
-
-  @PostMapping("/me/channels/diia/activate")
-  public ResponseEntity<Void> activateDiiaChannel(
+  @PostMapping("/me/channels/{channel}/activate")
+  public ResponseEntity<Void> activateDiiaChannel(@PathVariable("channel") String channel,
+      @RequestBody @Valid ActivateChannelInputDto input,
       @Parameter(hidden = true) @RequestHeader("X-Access-Token") String accessToken) {
     log.info("Activate diia channel is called");
-    activationService.activateDiia(accessToken);
+    activationService.activateChannel(input, channel, accessToken);
     return ResponseEntity.status(HttpStatus.OK).build();
   }
 

@@ -32,6 +32,8 @@ class ChannelVerificationServiceTest {
   private static final Channel EMAIL_CHANNEL = Channel.EMAIL;
   private static final String VALID_RECORD_KEY = String.format("%s/%s", USER_ID,
       EMAIL_CHANNEL.getValue());
+  private static final String VALID_DIIA_RECORD_KEY = String.format("%s/%s", USER_ID,
+      Channel.DIIA.getValue());
   private static final String VALID_EMAIL_ADDRESS = "test@email.addr";
   private static final String VALID_OTP_CODE = "654321";
 
@@ -139,5 +141,41 @@ class ChannelVerificationServiceTest {
         VALID_OTP_CODE, VALID_EMAIL_ADDRESS);
 
     assertThat(isValid).isFalse();
+  }
+
+  @Test
+  void shouldNotPassVerificationForDiiaChannelDifferentDrfos() {
+    Mockito.reset(jwtInfoProvider);
+    var drfo = "1234567891";
+    when(jwtInfoProvider.getUserId(VALID_ACCESS_TOKEN)).thenReturn(USER_ID);
+    when(jwtInfoProvider.getDrfo(VALID_ACCESS_TOKEN)).thenReturn("1111111111");
+    var otpEntity = OtpEntity.builder()
+        .id(VALID_DIIA_RECORD_KEY)
+        .otpData(new OtpData(drfo, VALID_OTP_CODE))
+        .build();
+    when(repository.findById(VALID_DIIA_RECORD_KEY)).thenReturn(Optional.of(otpEntity));
+
+    var isValid = channelVerificationService.verify(Channel.DIIA, VALID_ACCESS_TOKEN,
+        VALID_OTP_CODE, drfo);
+
+    assertThat(isValid).isFalse();
+  }
+
+  @Test
+  void shouldPassVerificationForDiiaChannel() {
+    Mockito.reset(jwtInfoProvider);
+    var drfo = "1234567891";
+    when(jwtInfoProvider.getUserId(VALID_ACCESS_TOKEN)).thenReturn(USER_ID);
+    when(jwtInfoProvider.getDrfo(VALID_ACCESS_TOKEN)).thenReturn(drfo);
+    var otpEntity = OtpEntity.builder()
+        .id(VALID_DIIA_RECORD_KEY)
+        .otpData(new OtpData(drfo, VALID_OTP_CODE))
+        .build();
+    when(repository.findById(VALID_DIIA_RECORD_KEY)).thenReturn(Optional.of(otpEntity));
+
+    var isValid = channelVerificationService.verify(Channel.DIIA, VALID_ACCESS_TOKEN,
+        VALID_OTP_CODE, drfo);
+
+    assertThat(isValid).isTrue();
   }
 }

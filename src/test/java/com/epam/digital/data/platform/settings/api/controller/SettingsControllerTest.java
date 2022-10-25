@@ -16,37 +16,6 @@
 
 package com.epam.digital.data.platform.settings.api.controller;
 
-import com.epam.digital.data.platform.settings.api.config.TestBeansConfig;
-import com.epam.digital.data.platform.settings.api.service.SettingsActivationService;
-import com.epam.digital.data.platform.settings.api.service.ChannelVerificationService;
-import com.epam.digital.data.platform.settings.api.service.SettingsReadService;
-import com.epam.digital.data.platform.settings.api.service.SettingsValidationService;
-import com.epam.digital.data.platform.settings.api.utils.Header;
-import com.epam.digital.data.platform.settings.model.dto.ActivateEmailInputDto;
-import com.epam.digital.data.platform.settings.model.dto.Channel;
-import com.epam.digital.data.platform.settings.model.dto.ChannelReadDto;
-import com.epam.digital.data.platform.settings.model.dto.VerificationCodeExpirationDto;
-import com.epam.digital.data.platform.settings.model.dto.SettingsEmailInputDto;
-import com.epam.digital.data.platform.settings.model.dto.SettingsDeactivateChannelInputDto;
-import com.epam.digital.data.platform.settings.model.dto.SettingsReadDto;
-import com.epam.digital.data.platform.settings.model.dto.VerificationInputDto;
-import com.epam.digital.data.platform.starter.localization.MessageResolver;
-import com.epam.digital.data.platform.starter.security.PermitAllWebSecurityConfig;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Import;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.web.servlet.MockMvc;
-
-import java.util.Collections;
-import java.util.UUID;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
@@ -60,6 +29,36 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import com.epam.digital.data.platform.settings.api.config.TestBeansConfig;
+import com.epam.digital.data.platform.settings.api.service.ChannelVerificationService;
+import com.epam.digital.data.platform.settings.api.service.SettingsActivationService;
+import com.epam.digital.data.platform.settings.api.service.SettingsReadService;
+import com.epam.digital.data.platform.settings.api.service.SettingsValidationService;
+import com.epam.digital.data.platform.settings.api.utils.Header;
+import com.epam.digital.data.platform.settings.model.dto.ActivateChannelInputDto;
+import com.epam.digital.data.platform.settings.model.dto.Channel;
+import com.epam.digital.data.platform.settings.model.dto.ChannelReadDto;
+import com.epam.digital.data.platform.settings.model.dto.SettingsDeactivateChannelInputDto;
+import com.epam.digital.data.platform.settings.model.dto.SettingsEmailInputDto;
+import com.epam.digital.data.platform.settings.model.dto.SettingsReadDto;
+import com.epam.digital.data.platform.settings.model.dto.VerificationCodeExpirationDto;
+import com.epam.digital.data.platform.settings.model.dto.VerificationInputDto;
+import com.epam.digital.data.platform.starter.localization.MessageResolver;
+import com.epam.digital.data.platform.starter.security.PermitAllWebSecurityConfig;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Collections;
+import java.util.UUID;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest
 @TestPropertySource(properties = {"platform.security.enabled=false"})
@@ -129,7 +128,7 @@ class SettingsControllerTest {
 
   @Test
   void expectControllerActivateEmailChannel() throws Exception {
-    var payload = new ActivateEmailInputDto();
+    var payload = new ActivateChannelInputDto();
     payload.setAddress(EMAIL);
     payload.setVerificationCode("123456");
 
@@ -141,20 +140,29 @@ class SettingsControllerTest {
         .andExpectAll(
             status().isOk());
 
-    var captor = ArgumentCaptor.forClass(ActivateEmailInputDto.class);
-    verify(settingsActivationService).activateEmail(captor.capture(), eq(TOKEN));
+    var captor = ArgumentCaptor.forClass(ActivateChannelInputDto.class);
+    verify(settingsActivationService).activateChannel(captor.capture(), eq("email"), eq(TOKEN));
     assertThat(captor.getValue().getAddress()).isEqualTo(EMAIL);
   }
 
   @Test
   void expectControllerActivateDiiaChannel() throws Exception {
+    var payload = new ActivateChannelInputDto();
+    payload.setAddress("2222222222");
+    payload.setVerificationCode("123456");
     mockMvc
         .perform(
             post(BASE_URL + "/me/channels/diia/activate")
-                .header(Header.X_ACCESS_TOKEN.getHeaderName(), TOKEN))
+                .header(Header.X_ACCESS_TOKEN.getHeaderName(), TOKEN)
+                .content(objectMapper.writeValueAsString(payload))
+                .contentType(MediaType.APPLICATION_JSON))
         .andExpectAll(status().isOk());
 
-    verify(settingsActivationService).activateDiia(TOKEN);
+    var captor = ArgumentCaptor.forClass(ActivateChannelInputDto.class);
+    verify(settingsActivationService).activateChannel(captor.capture(), eq("diia"), eq(TOKEN));
+    var capturedPayload = captor.getValue();
+    assertThat(capturedPayload.getAddress()).isEqualTo(payload.getAddress());
+    assertThat(capturedPayload.getVerificationCode()).isEqualTo(payload.getVerificationCode());
   }
 
   @Test
@@ -182,18 +190,19 @@ class SettingsControllerTest {
     request.setAddress(EMAIL);
     when(channelVerificationService.sendVerificationCode(any(Channel.class), any(
         VerificationInputDto.class), anyString()))
-            .thenReturn(new VerificationCodeExpirationDto(60));
+        .thenReturn(new VerificationCodeExpirationDto(60));
 
     mockMvc
-            .perform(
-                    post(BASE_URL + "/me/channels/email/verify")
-                            .header(Header.X_ACCESS_TOKEN.getHeaderName(), TOKEN)
-                            .content(objectMapper.writeValueAsString(request))
-                            .contentType(MediaType.APPLICATION_JSON))
-            .andExpectAll(status().isAccepted(),
-                    content().contentType(MediaType.APPLICATION_JSON),
-                    jsonPath("$.verificationCodeExpirationSec", is(60)));
+        .perform(
+            post(BASE_URL + "/me/channels/email/verify")
+                .header(Header.X_ACCESS_TOKEN.getHeaderName(), TOKEN)
+                .content(objectMapper.writeValueAsString(request))
+                .contentType(MediaType.APPLICATION_JSON))
+        .andExpectAll(status().isAccepted(),
+            content().contentType(MediaType.APPLICATION_JSON),
+            jsonPath("$.verificationCodeExpirationSec", is(60)));
 
-    verify(channelVerificationService).sendVerificationCode(eq(Channel.EMAIL), argThat(dto -> EMAIL.equals(dto.getAddress())), eq(TOKEN));
+    verify(channelVerificationService).sendVerificationCode(eq(Channel.EMAIL),
+        argThat(dto -> EMAIL.equals(dto.getAddress())), eq(TOKEN));
   }
 }

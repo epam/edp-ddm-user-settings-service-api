@@ -21,7 +21,7 @@ import com.epam.digital.data.platform.settings.api.exception.ChannelVerification
 import com.epam.digital.data.platform.settings.api.model.Settings;
 import com.epam.digital.data.platform.settings.api.repository.NotificationChannelRepository;
 import com.epam.digital.data.platform.settings.api.repository.SettingsRepository;
-import com.epam.digital.data.platform.settings.model.dto.ActivateEmailInputDto;
+import com.epam.digital.data.platform.settings.model.dto.ActivateChannelInputDto;
 import com.epam.digital.data.platform.settings.model.dto.Channel;
 import com.epam.digital.data.platform.settings.model.dto.SettingsDeactivateChannelInputDto;
 import java.time.LocalDateTime;
@@ -54,52 +54,31 @@ public class SettingsActivationService {
     this.channelVerificationService = channelVerificationService;
   }
 
-  public void activateEmail(ActivateEmailInputDto input, String accessToken) {
+  public void activateChannel(ActivateChannelInputDto input, String channel, String accessToken) {
+    var channelEnum = Channel.valueOf(channel.toUpperCase());
     boolean successfullyVerified = channelVerificationService
-        .verify(Channel.EMAIL, accessToken, input.getVerificationCode(), input.getAddress());
+        .verify(channelEnum, accessToken, input.getVerificationCode(), input.getAddress());
     if (!successfullyVerified) {
-      auditFacade.sendActivationAuditOnFailure(Channel.EMAIL, input,
+      auditFacade.sendActivationAuditOnFailure(channelEnum, input,
           "Communication channel verification failed");
       throw new ChannelVerificationException("Communication channel verification failed");
     }
-
     var settings = getSettingsFromToken(accessToken);
     var notificationChannel =
-        channelRepository.findBySettingsIdAndChannel(settings.getId(), Channel.EMAIL);
+        channelRepository.findBySettingsIdAndChannel(settings.getId(), channelEnum);
 
     try {
       if (notificationChannel.isPresent()) {
-        log.info("Activation of existing email channel");
+        log.info(String.format("Activation of existing %s channel", channel));
         channelRepository.activateChannel(
             notificationChannel.get().getId(), input.getAddress(), LocalDateTime.now());
       } else {
-        log.info("Creation of activated email channel");
-        channelRepository.create(settings.getId(), Channel.EMAIL, input.getAddress(), true, null);
+        log.info(String.format("Creation of activated %s channel", channel));
+        channelRepository.create(settings.getId(), channelEnum, input.getAddress(), true, null);
       }
-      auditFacade.sendActivationAuditOnSuccess(Channel.EMAIL, input);
+      auditFacade.sendActivationAuditOnSuccess(channelEnum, input);
     } catch (RuntimeException exception) {
-      auditFacade.sendActivationAuditOnFailure(Channel.EMAIL, input, exception.getMessage());
-      throw exception;
-    }
-  }
-
-  public void activateDiia(String accessToken) {
-    var settings = getSettingsFromToken(accessToken);
-    var notificationChannel =
-        channelRepository.findBySettingsIdAndChannel(settings.getId(), Channel.DIIA);
-
-    try {
-      if (notificationChannel.isPresent()) {
-        log.info("Activation of existing diia channel");
-        channelRepository.activateChannel(
-            notificationChannel.get().getId(), null, LocalDateTime.now());
-      } else {
-        log.info("Creation of activated diia channel");
-        channelRepository.create(settings.getId(), Channel.DIIA, null, true, null);
-      }
-      auditFacade.sendActivationAuditOnSuccess(Channel.DIIA, null);
-    } catch (RuntimeException exception) {
-      auditFacade.sendActivationAuditOnFailure(Channel.DIIA, null, exception.getMessage());
+      auditFacade.sendActivationAuditOnFailure(channelEnum, input, exception.getMessage());
       throw exception;
     }
   }

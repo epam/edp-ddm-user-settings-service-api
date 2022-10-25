@@ -24,10 +24,9 @@ import static org.mockito.Mockito.when;
 import com.epam.digital.data.platform.settings.api.audit.dto.ActivateChannelAuditDto;
 import com.epam.digital.data.platform.settings.api.audit.dto.DeactivateChannelAuditDto;
 import com.epam.digital.data.platform.settings.api.audit.dto.DeliveryAuditDto;
-import com.epam.digital.data.platform.settings.model.dto.ActivateEmailInputDto;
+import com.epam.digital.data.platform.settings.model.dto.ActivateChannelInputDto;
 import com.epam.digital.data.platform.settings.model.dto.Channel;
 import com.epam.digital.data.platform.settings.model.dto.SettingsDeactivateChannelInputDto;
-import com.epam.digital.data.platform.settings.model.dto.SettingsEmailInputDto;
 import com.epam.digital.data.platform.starter.audit.model.AuditEvent;
 import com.epam.digital.data.platform.starter.audit.model.Status;
 import com.epam.digital.data.platform.starter.audit.service.AuditService;
@@ -64,7 +63,7 @@ class SettingsAuditFacadeTest {
 
   @Test
   void shouldSendActivationAuditOnSuccess() {
-    var input = new ActivateEmailInputDto();
+    var input = new ActivateChannelInputDto();
     input.setAddress(EMAIL_ADDRESS);
     input.setVerificationCode("123456");
 
@@ -79,7 +78,7 @@ class SettingsAuditFacadeTest {
 
   @Test
   void shouldSendActivationAuditOnFailure() {
-    var input = new ActivateEmailInputDto();
+    var input = new ActivateChannelInputDto();
     input.setAddress(EMAIL_ADDRESS);
     input.setVerificationCode("123456");
 

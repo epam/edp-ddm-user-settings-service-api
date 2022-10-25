@@ -39,7 +39,7 @@ import com.epam.digital.data.platform.settings.api.service.SettingsReadService;
 import com.epam.digital.data.platform.settings.api.service.SettingsValidationService;
 import com.epam.digital.data.platform.settings.api.service.TraceService;
 import com.epam.digital.data.platform.settings.api.utils.ResponseCode;
-import com.epam.digital.data.platform.settings.model.dto.ActivateEmailInputDto;
+import com.epam.digital.data.platform.settings.model.dto.ActivateChannelInputDto;
 import com.epam.digital.data.platform.settings.model.dto.Channel;
 import com.epam.digital.data.platform.settings.model.dto.SettingsEmailInputDto;
 import com.epam.digital.data.platform.settings.model.dto.VerificationInputDto;
@@ -145,7 +145,7 @@ class ApplicationExceptionHandlerTest extends ResponseEntityExceptionHandler {
 
   @Test
   void shouldReturn422WithBodyWhenMethodArgumentNotValid() throws Exception {
-    var inputBody = new ActivateEmailInputDto();
+    var inputBody = new ActivateChannelInputDto();
     inputBody.setVerificationCode("123456");
     String inputStringBody = objectMapper.writeValueAsString(inputBody);
 

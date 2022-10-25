@@ -31,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.epam.digital.data.platform.settings.api.repository.NotificationChannelRepository;
 import com.epam.digital.data.platform.settings.api.service.ChannelVerificationService;
-import com.epam.digital.data.platform.settings.model.dto.ActivateEmailInputDto;
+import com.epam.digital.data.platform.settings.model.dto.ActivateChannelInputDto;
 import com.epam.digital.data.platform.settings.model.dto.Channel;
 import com.epam.digital.data.platform.settings.model.dto.SettingsDeactivateChannelInputDto;
 import com.epam.digital.data.platform.settings.model.dto.SettingsEmailInputDto;
@@ -124,7 +124,7 @@ class SettingsControllerIT {
 
   @Test
   void shouldActivateEmailChannel() throws Exception {
-    var input = new ActivateEmailInputDto();
+    var input = new ActivateChannelInputDto();
     input.setAddress("new@email.com");
     input.setVerificationCode("123456");
 
@@ -153,10 +153,18 @@ class SettingsControllerIT {
 
   @Test
   void shouldActivateDiiaChannel() throws Exception {
+    var input = new ActivateChannelInputDto();
+    input.setAddress("1010101014");
+    input.setVerificationCode("123456");
+    when(channelVerificationService.verify(any(Channel.class), anyString(), anyString(),
+        anyString()))
+        .thenReturn(true);
     mockMvc
         .perform(
             post(BASE_URL + "/me/channels/diia/activate")
-                .header(X_ACCESS_TOKEN.getHeaderName(), TOKEN))
+                .header(X_ACCESS_TOKEN.getHeaderName(), TOKEN)
+                .content(objectMapper.writeValueAsString(input))
+                .contentType(MediaType.APPLICATION_JSON))
         .andExpectAll(status().isOk());
 
     var activatedChannel =
@@ -164,7 +172,7 @@ class SettingsControllerIT {
 
     assertThat(activatedChannel.getSettingsId()).isEqualTo(SETTINGS_ID_1);
     assertThat(activatedChannel.getChannel()).isEqualTo(Channel.DIIA);
-    assertThat(activatedChannel.getAddress()).isNull();
+    assertThat(activatedChannel.getAddress()).isEqualTo("1010101014");
     assertThat(activatedChannel.isActivated()).isTrue();
     assertThat(activatedChannel.getDeactivationReason()).isNull();
   }

@@ -99,6 +99,18 @@ public class ChannelVerificationServiceImpl implements ChannelVerificationServic
 
     return otpEntity.isPresent()
         && otpEntity.get().getOtpData().getVerificationCode().equals(verificationCode)
-        && otpEntity.get().getOtpData().getAddress().equals(address);
+        && otpEntity.get().getOtpData().getAddress().equals(address)
+        && channelSpecificVerifications(channel, accessToken, address);
+  }
+
+  private boolean channelSpecificVerifications(Channel channel, String accessToken, String address) {
+    if (Channel.DIIA.equals(channel)) {
+      var drfo = jwtInfoProvider.getDrfo(accessToken);
+      if (!address.equals(drfo)) {
+        log.error("Invalid address for DIIA channel. Input drfo is not equal to user drfo");
+        return false;
+      }
+    }
+    return true;
   }
 }
