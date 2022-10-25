@@ -20,7 +20,7 @@ import com.epam.digital.data.platform.settings.api.audit.dto.ActivateChannelAudi
 import com.epam.digital.data.platform.settings.api.audit.dto.AuditResultDto;
 import com.epam.digital.data.platform.settings.api.audit.dto.DeactivateChannelAuditDto;
 import com.epam.digital.data.platform.settings.api.audit.dto.DeliveryAuditDto;
-import com.epam.digital.data.platform.settings.model.dto.ActivateEmailInputDto;
+import com.epam.digital.data.platform.settings.model.dto.ActivateChannelInputDto;
 import com.epam.digital.data.platform.settings.model.dto.Channel;
 import com.epam.digital.data.platform.settings.model.dto.SettingsDeactivateChannelInputDto;
 import com.epam.digital.data.platform.starter.audit.model.EventType;
@@ -43,14 +43,14 @@ public class SettingsAuditFacade extends AbstractAuditFacade {
     super(auditService, appName, clock);
   }
 
-  public void sendActivationAuditOnSuccess(Channel channel, ActivateEmailInputDto input) {
+  public void sendActivationAuditOnSuccess(Channel channel, ActivateChannelInputDto input) {
     this.sendChannelActivationAudit(
         Operation.USER_NOTIFICATION_CHANNEL_ACTIVATION.name(),
         AuditResultDto.builder().status(Status.SUCCESS.name()).build(),
         channel.getValue(), input);
   }
 
-  public void sendActivationAuditOnFailure(Channel channel, ActivateEmailInputDto input,
+  public void sendActivationAuditOnFailure(Channel channel, ActivateChannelInputDto input,
       String failureReason) {
     this.sendChannelActivationAudit(
         Operation.USER_NOTIFICATION_CHANNEL_ACTIVATION.name(),
@@ -75,7 +75,7 @@ public class SettingsAuditFacade extends AbstractAuditFacade {
   }
 
   private void sendChannelActivationAudit(String action, AuditResultDto result, String channel,
-      ActivateEmailInputDto activateEmailDto) {
+      ActivateChannelInputDto activateEmailDto) {
     var event = createBaseAuditEvent(
         EventType.USER_ACTION, action, MDC.get(MDC_TRACE_ID_HEADER));
 

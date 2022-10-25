@@ -16,29 +16,27 @@
 
 package com.epam.digital.data.platform.settings.api.service;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.epam.digital.data.platform.settings.api.audit.SettingsAuditFacade;
 import com.epam.digital.data.platform.settings.api.model.NotificationChannel;
 import com.epam.digital.data.platform.settings.api.model.Settings;
 import com.epam.digital.data.platform.settings.api.repository.NotificationChannelRepository;
 import com.epam.digital.data.platform.settings.api.repository.SettingsRepository;
-import com.epam.digital.data.platform.settings.model.dto.ActivateEmailInputDto;
+import com.epam.digital.data.platform.settings.model.dto.ActivateChannelInputDto;
 import com.epam.digital.data.platform.settings.model.dto.Channel;
-import com.epam.digital.data.platform.settings.model.dto.SettingsEmailInputDto;
 import com.epam.digital.data.platform.settings.model.dto.SettingsDeactivateChannelInputDto;
+import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.time.LocalDateTime;
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class SettingsActivationServiceTest {
@@ -74,7 +72,7 @@ class SettingsActivationServiceTest {
 
   @Test
   void expectUpdateDeactivatedEmailChannel() {
-    var inputDto = new ActivateEmailInputDto();
+    var inputDto = new ActivateChannelInputDto();
     inputDto.setAddress("new@email.com");
     inputDto.setVerificationCode("123456");
 
@@ -98,7 +96,7 @@ class SettingsActivationServiceTest {
     when(channelVerificationService.verify(Channel.EMAIL, "token", "123456", "new@email.com"))
         .thenReturn(true);
 
-    settingsActivationService.activateEmail(inputDto, "token");
+    settingsActivationService.activateChannel(inputDto, "email", "token");
 
     verify(notificationChannelRepository)
         .activateChannel(eq(NOTIFICATION_CHANNEL_ID), eq("new@email.com"), any());
@@ -106,7 +104,7 @@ class SettingsActivationServiceTest {
 
   @Test
   void expectCreateActivatedEmailChannel() {
-    var inputDto = new ActivateEmailInputDto();
+    var inputDto = new ActivateChannelInputDto();
     inputDto.setAddress("new@email.com");
     inputDto.setVerificationCode("123456");
 
@@ -120,7 +118,7 @@ class SettingsActivationServiceTest {
     when(channelVerificationService.verify(Channel.EMAIL, "token", "123456", "new@email.com"))
         .thenReturn(true);
 
-    settingsActivationService.activateEmail(inputDto, "token");
+    settingsActivationService.activateChannel(inputDto, "email", "token");
 
     verify(notificationChannelRepository)
         .create(SETTINGS_ID, Channel.EMAIL, "new@email.com", true, null);
@@ -128,7 +126,10 @@ class SettingsActivationServiceTest {
 
   @Test
   void expectUpdateDeactivatedDiiaChannel() {
-
+    var drfo = "2222222222";
+    var inputDto = new ActivateChannelInputDto();
+    inputDto.setAddress(drfo);
+    inputDto.setVerificationCode("123456");
     var settingsFromDb = new Settings();
     settingsFromDb.setId(SETTINGS_ID);
     settingsFromDb.setKeycloakId(TOKEN_SUBJECT_ID);
@@ -145,15 +146,21 @@ class SettingsActivationServiceTest {
             .thenReturn(settingsFromDb);
     when(notificationChannelRepository.findBySettingsIdAndChannel(SETTINGS_ID,
             Channel.DIIA)).thenReturn(Optional.of(channelFromDb));
+    when(channelVerificationService.verify(Channel.DIIA, "token", "123456", drfo))
+        .thenReturn(true);
 
-    settingsActivationService.activateDiia("token");
+    settingsActivationService.activateChannel(inputDto, "diia", "token");
 
     verify(notificationChannelRepository)
-            .activateChannel(eq(NOTIFICATION_CHANNEL_ID), eq(null), any());
+            .activateChannel(eq(NOTIFICATION_CHANNEL_ID), eq(drfo), any());
   }
 
   @Test
   void expectCreateActivatedDiiaChannel() {
+    var drfo = "2222222222";
+    var inputDto = new ActivateChannelInputDto();
+    inputDto.setAddress(drfo);
+    inputDto.setVerificationCode("123456");
     var settingsFromDb = new Settings();
     settingsFromDb.setId(SETTINGS_ID);
     settingsFromDb.setKeycloakId(TOKEN_SUBJECT_ID);
@@ -162,11 +169,13 @@ class SettingsActivationServiceTest {
             .thenReturn(settingsFromDb);
     when(notificationChannelRepository.findBySettingsIdAndChannel(SETTINGS_ID, Channel.DIIA))
             .thenReturn(Optional.empty());
+    when(channelVerificationService.verify(Channel.DIIA, "token", "123456", drfo))
+        .thenReturn(true);
 
-    settingsActivationService.activateDiia("token");
+    settingsActivationService.activateChannel(inputDto, "diia", "token");
 
     verify(notificationChannelRepository)
-            .create(SETTINGS_ID, Channel.DIIA, null, true, null);
+            .create(SETTINGS_ID, Channel.DIIA, drfo, true, null);
   }
 
   @Test

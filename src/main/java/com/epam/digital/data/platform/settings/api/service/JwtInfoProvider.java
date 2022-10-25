@@ -37,4 +37,9 @@ public class JwtInfoProvider {
     var userClaims = tokenParser.parseClaims(accessToken);
     return userClaims.getPreferredUsername();
   }
+
+  public String getDrfo(String accessToken) {
+    var userClaims = tokenParser.parseClaims(accessToken);
+    return userClaims.getDrfo();
+  }
 }
