@@ -20,6 +20,9 @@ import static com.epam.digital.data.platform.settings.api.TestUtils.readClassPat
 import static com.epam.digital.data.platform.settings.api.utils.Header.X_ACCESS_TOKEN;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -27,6 +30,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.epam.digital.data.platform.settings.api.repository.NotificationChannelRepository;
+import com.epam.digital.data.platform.settings.api.service.ChannelVerificationService;
+import com.epam.digital.data.platform.settings.model.dto.ActivateEmailInputDto;
 import com.epam.digital.data.platform.settings.model.dto.Channel;
 import com.epam.digital.data.platform.settings.model.dto.SettingsDeactivateChannelInputDto;
 import com.epam.digital.data.platform.settings.model.dto.SettingsEmailInputDto;
@@ -40,7 +45,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,6 +57,8 @@ import org.springframework.transaction.annotation.Transactional;
 @AutoConfigureEmbeddedDatabase(provider = AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY)
 @Transactional
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+@EmbeddedKafka(partitions = 1, brokerProperties = {"listeners=PLAINTEXT://localhost:9092",
+    "port=9092"})
 class SettingsControllerIT {
 
   private static final String BASE_URL = "/api/settings";
@@ -70,6 +79,9 @@ class SettingsControllerIT {
   ObjectMapper objectMapper;
   @Autowired
   NotificationChannelRepository notificationChannelRepository;
+
+  @MockBean
+  ChannelVerificationService channelVerificationService;
 
   @BeforeAll
   static void init() throws IOException {
@@ -112,8 +124,13 @@ class SettingsControllerIT {
 
   @Test
   void shouldActivateEmailChannel() throws Exception {
-    var input = new SettingsEmailInputDto();
+    var input = new ActivateEmailInputDto();
     input.setAddress("new@email.com");
+    input.setVerificationCode("123456");
+
+    when(channelVerificationService.verify(any(Channel.class), anyString(), anyString(),
+        anyString()))
+        .thenReturn(true);
 
     mockMvc
         .perform(post(BASE_URL + "/me/channels/email/activate")
@@ -124,7 +141,8 @@ class SettingsControllerIT {
             status().isOk());
 
     var activatedChannel =
-        notificationChannelRepository.findBySettingsIdAndChannel(SETTINGS_ID_1, Channel.EMAIL).get();
+        notificationChannelRepository.findBySettingsIdAndChannel(SETTINGS_ID_1, Channel.EMAIL)
+            .get();
 
     assertThat(activatedChannel.getSettingsId()).isEqualTo(SETTINGS_ID_1);
     assertThat(activatedChannel.getChannel()).isEqualTo(Channel.EMAIL);
@@ -142,7 +160,7 @@ class SettingsControllerIT {
         .andExpectAll(status().isOk());
 
     var activatedChannel =
-            notificationChannelRepository.findBySettingsIdAndChannel(SETTINGS_ID_1, Channel.DIIA).get();
+        notificationChannelRepository.findBySettingsIdAndChannel(SETTINGS_ID_1, Channel.DIIA).get();
 
     assertThat(activatedChannel.getSettingsId()).isEqualTo(SETTINGS_ID_1);
     assertThat(activatedChannel.getChannel()).isEqualTo(Channel.DIIA);
@@ -165,7 +183,7 @@ class SettingsControllerIT {
         .andExpectAll(status().isOk());
 
     var activatedChannel =
-            notificationChannelRepository.findBySettingsIdAndChannel(SETTINGS_ID_1, Channel.DIIA).get();
+        notificationChannelRepository.findBySettingsIdAndChannel(SETTINGS_ID_1, Channel.DIIA).get();
 
     assertThat(activatedChannel.getSettingsId()).isEqualTo(SETTINGS_ID_1);
     assertThat(activatedChannel.getChannel()).isEqualTo(Channel.DIIA);

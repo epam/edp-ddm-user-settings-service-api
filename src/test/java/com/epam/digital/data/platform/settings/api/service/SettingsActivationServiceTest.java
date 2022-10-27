@@ -21,6 +21,7 @@ import com.epam.digital.data.platform.settings.api.model.NotificationChannel;
 import com.epam.digital.data.platform.settings.api.model.Settings;
 import com.epam.digital.data.platform.settings.api.repository.NotificationChannelRepository;
 import com.epam.digital.data.platform.settings.api.repository.SettingsRepository;
+import com.epam.digital.data.platform.settings.model.dto.ActivateEmailInputDto;
 import com.epam.digital.data.platform.settings.model.dto.Channel;
 import com.epam.digital.data.platform.settings.model.dto.SettingsEmailInputDto;
 import com.epam.digital.data.platform.settings.model.dto.SettingsDeactivateChannelInputDto;
@@ -60,19 +61,22 @@ class SettingsActivationServiceTest {
   private JwtInfoProvider jwtInfoProvider;
   @Mock
   private SettingsAuditFacade auditFacade;
+  @Mock
+  private ChannelVerificationService channelVerificationService;
 
   @BeforeEach
   void beforeEach() {
     settingsActivationService = new SettingsActivationService(notificationChannelRepository,
-        settingsRepository, jwtInfoProvider, auditFacade);
+        settingsRepository, jwtInfoProvider, auditFacade, channelVerificationService);
 
     when(jwtInfoProvider.getUserId(any())).thenReturn(TOKEN_SUBJECT_ID.toString());
   }
 
   @Test
   void expectUpdateDeactivatedEmailChannel() {
-    var inputDto = new SettingsEmailInputDto();
+    var inputDto = new ActivateEmailInputDto();
     inputDto.setAddress("new@email.com");
+    inputDto.setVerificationCode("123456");
 
     var settingsFromDb = new Settings();
     settingsFromDb.setId(SETTINGS_ID);
@@ -91,6 +95,8 @@ class SettingsActivationServiceTest {
         .thenReturn(settingsFromDb);
     when(notificationChannelRepository.findBySettingsIdAndChannel(SETTINGS_ID,
         Channel.EMAIL)).thenReturn(Optional.of(channelFromDb));
+    when(channelVerificationService.verify(Channel.EMAIL, "token", "123456", "new@email.com"))
+        .thenReturn(true);
 
     settingsActivationService.activateEmail(inputDto, "token");
 
@@ -100,8 +106,9 @@ class SettingsActivationServiceTest {
 
   @Test
   void expectCreateActivatedEmailChannel() {
-    var inputDto = new SettingsEmailInputDto();
+    var inputDto = new ActivateEmailInputDto();
     inputDto.setAddress("new@email.com");
+    inputDto.setVerificationCode("123456");
 
     var settingsFromDb = new Settings();
     settingsFromDb.setId(SETTINGS_ID);
@@ -110,6 +117,8 @@ class SettingsActivationServiceTest {
     when(settingsRepository.getByKeycloakId(TOKEN_SUBJECT_ID)).thenReturn(settingsFromDb);
     when(notificationChannelRepository.findBySettingsIdAndChannel(SETTINGS_ID, Channel.EMAIL))
         .thenReturn(Optional.empty());
+    when(channelVerificationService.verify(Channel.EMAIL, "token", "123456", "new@email.com"))
+        .thenReturn(true);
 
     settingsActivationService.activateEmail(inputDto, "token");
 

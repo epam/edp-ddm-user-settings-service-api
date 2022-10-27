@@ -20,9 +20,9 @@ import com.epam.digital.data.platform.settings.api.audit.dto.ActivateChannelAudi
 import com.epam.digital.data.platform.settings.api.audit.dto.AuditResultDto;
 import com.epam.digital.data.platform.settings.api.audit.dto.DeactivateChannelAuditDto;
 import com.epam.digital.data.platform.settings.api.audit.dto.DeliveryAuditDto;
+import com.epam.digital.data.platform.settings.model.dto.ActivateEmailInputDto;
 import com.epam.digital.data.platform.settings.model.dto.Channel;
 import com.epam.digital.data.platform.settings.model.dto.SettingsDeactivateChannelInputDto;
-import com.epam.digital.data.platform.settings.model.dto.SettingsEmailInputDto;
 import com.epam.digital.data.platform.starter.audit.model.EventType;
 import com.epam.digital.data.platform.starter.audit.model.Operation;
 import com.epam.digital.data.platform.starter.audit.model.Status;
@@ -43,14 +43,14 @@ public class SettingsAuditFacade extends AbstractAuditFacade {
     super(auditService, appName, clock);
   }
 
-  public void sendActivationAuditOnSuccess(Channel channel, SettingsEmailInputDto input) {
+  public void sendActivationAuditOnSuccess(Channel channel, ActivateEmailInputDto input) {
     this.sendChannelActivationAudit(
         Operation.USER_NOTIFICATION_CHANNEL_ACTIVATION.name(),
         AuditResultDto.builder().status(Status.SUCCESS.name()).build(),
         channel.getValue(), input);
   }
 
-  public void sendActivationAuditOnFailure(Channel channel, SettingsEmailInputDto input,
+  public void sendActivationAuditOnFailure(Channel channel, ActivateEmailInputDto input,
       String failureReason) {
     this.sendChannelActivationAudit(
         Operation.USER_NOTIFICATION_CHANNEL_ACTIVATION.name(),
@@ -75,7 +75,7 @@ public class SettingsAuditFacade extends AbstractAuditFacade {
   }
 
   private void sendChannelActivationAudit(String action, AuditResultDto result, String channel,
-      SettingsEmailInputDto activateEmailDto) {
+      ActivateEmailInputDto activateEmailDto) {
     var event = createBaseAuditEvent(
         EventType.USER_ACTION, action, MDC.get(MDC_TRACE_ID_HEADER));
 

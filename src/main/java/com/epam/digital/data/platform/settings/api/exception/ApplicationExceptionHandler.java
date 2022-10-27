@@ -174,6 +174,14 @@ public class ApplicationExceptionHandler extends ResponseEntityExceptionHandler 
     return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(response);
   }
 
+  @ExceptionHandler(ChannelVerificationException.class)
+  public ResponseEntity<DetailedErrorResponse<Void>> handleEmailAlreadyVerifyingException(
+      ChannelVerificationException exception) {
+    log.error("Communication channel verification failed", exception);
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        .body(newDetailedResponse(ResponseCode.VERIFICATION_ERROR));
+  }
+
   private FieldsValidationErrorDetails.FieldError bindErrorToFieldError(ObjectError error) {
     String msg = error.getDefaultMessage();
 

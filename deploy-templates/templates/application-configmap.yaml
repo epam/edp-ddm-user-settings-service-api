@@ -16,6 +16,18 @@ data:
       datasource:
         url: jdbc:postgresql://{{.Values.db.url}}:{{.Values.db.port}}/{{.Values.db.name}}
         connection-timeout: {{.Values.db.connectionTimeout}}
+      kafka:
+        producer:
+          enabled: true
+        bootstrap: {{ .Values.kafka.service }}
+        ssl:
+          enabled: {{ .Values.kafka.sslEnabled }}
+          keystore-type: {{ .Values.kafka.sslCertType }}
+          truststore-type: {{ .Values.kafka.sslCertType }}
+          keystore-certificate: {{ .Values.kafka.sslUserCertificate }}
+          keystore-key: {{ .Values.kafka.sslUserKey }}
+          truststore-certificate: {{ .Values.kafka.sslClusterCertificate }}
+
 
     platform:
       security:
@@ -32,4 +44,8 @@ data:
           keystore-certificate: {{ .Values.kafka.sslUserCertificate }}
           keystore-key: {{ .Values.kafka.sslUserKey }}
           truststore-certificate: {{ .Values.kafka.sslClusterCertificate }}
+
+    verification:
+      otp:
+        time-to-live: {{ .Values.verification.otp.timeToLive }}
 {{- end }}

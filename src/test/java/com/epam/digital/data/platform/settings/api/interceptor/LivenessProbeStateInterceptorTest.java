@@ -26,6 +26,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import com.epam.digital.data.platform.settings.api.config.WebConfig;
 import com.epam.digital.data.platform.settings.api.controller.SettingsController;
 import com.epam.digital.data.platform.settings.api.service.SettingsActivationService;
+import com.epam.digital.data.platform.settings.api.service.ChannelVerificationService;
 import com.epam.digital.data.platform.settings.api.service.SettingsReadService;
 import com.epam.digital.data.platform.settings.api.service.SettingsValidationService;
 import com.epam.digital.data.platform.settings.model.dto.SettingsReadDto;
@@ -64,6 +65,8 @@ class LivenessProbeStateInterceptorTest {
   private SettingsActivationService settingsActivationService;
   @MockBean
   private SettingsValidationService settingsValidationService;
+  @MockBean
+  private ChannelVerificationService channelVerificationFacade;
 
   @Test
   void expectStateHandlerIsCalledInInterceptor() throws Exception {

@@ -17,12 +17,13 @@
 package com.epam.digital.data.platform.settings.api.service;
 
 import com.epam.digital.data.platform.settings.api.audit.SettingsAuditFacade;
+import com.epam.digital.data.platform.settings.api.exception.ChannelVerificationException;
 import com.epam.digital.data.platform.settings.api.model.Settings;
 import com.epam.digital.data.platform.settings.api.repository.NotificationChannelRepository;
 import com.epam.digital.data.platform.settings.api.repository.SettingsRepository;
+import com.epam.digital.data.platform.settings.model.dto.ActivateEmailInputDto;
 import com.epam.digital.data.platform.settings.model.dto.Channel;
 import com.epam.digital.data.platform.settings.model.dto.SettingsDeactivateChannelInputDto;
-import com.epam.digital.data.platform.settings.model.dto.SettingsEmailInputDto;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -38,19 +39,30 @@ public class SettingsActivationService {
   private final SettingsRepository settingsRepository;
   private final JwtInfoProvider jwtInfoProvider;
   private final SettingsAuditFacade auditFacade;
+  private final ChannelVerificationService channelVerificationService;
 
   public SettingsActivationService(
       NotificationChannelRepository channelRepository,
       SettingsRepository settingsRepository,
       JwtInfoProvider jwtInfoProvider,
-      SettingsAuditFacade auditFacade) {
+      SettingsAuditFacade auditFacade,
+      ChannelVerificationService channelVerificationService) {
     this.channelRepository = channelRepository;
     this.settingsRepository = settingsRepository;
     this.jwtInfoProvider = jwtInfoProvider;
     this.auditFacade = auditFacade;
+    this.channelVerificationService = channelVerificationService;
   }
 
-  public void activateEmail(SettingsEmailInputDto input, String accessToken) {
+  public void activateEmail(ActivateEmailInputDto input, String accessToken) {
+    boolean successfullyVerified = channelVerificationService
+        .verify(Channel.EMAIL, accessToken, input.getVerificationCode(), input.getAddress());
+    if (!successfullyVerified) {
+      auditFacade.sendActivationAuditOnFailure(Channel.EMAIL, input,
+          "Communication channel verification failed");
+      throw new ChannelVerificationException("Communication channel verification failed");
+    }
+
     var settings = getSettingsFromToken(accessToken);
     var notificationChannel =
         channelRepository.findBySettingsIdAndChannel(settings.getId(), Channel.EMAIL);
