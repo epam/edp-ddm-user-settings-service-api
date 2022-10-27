@@ -16,25 +16,15 @@
 
 package com.epam.digital.data.platform.settings.api.service;
 
-import com.epam.digital.data.platform.starter.security.jwt.TokenParser;
-import org.springframework.stereotype.Component;
+import com.epam.digital.data.platform.settings.model.dto.Channel;
+import com.epam.digital.data.platform.settings.model.dto.VerificationCodeExpirationDto;
+import com.epam.digital.data.platform.settings.model.dto.VerificationInputDto;
 
-@Component
-public class JwtInfoProvider {
+public interface ChannelVerificationService {
 
-  private final TokenParser tokenParser;
+  VerificationCodeExpirationDto sendVerificationCode(
+      Channel channel, VerificationInputDto input, String accessToken);
 
-  public JwtInfoProvider(TokenParser tokenParser) {
-    this.tokenParser = tokenParser;
-  }
 
-  public String getUserId(String accessToken) {
-    var userClaims = tokenParser.parseClaims(accessToken);
-    return userClaims.getSubject();
-  }
-  
-  public String getUsername(String accessToken) {
-    var userClaims = tokenParser.parseClaims(accessToken);
-    return userClaims.getPreferredUsername();
-  }
+    boolean verify(Channel channel, String accessToken, String verificationCode, String address);
 }

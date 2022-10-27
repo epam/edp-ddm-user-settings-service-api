@@ -20,6 +20,7 @@ import static com.epam.digital.data.platform.settings.api.utils.Header.X_ACCESS_
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -29,14 +30,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.epam.digital.data.platform.settings.api.controller.SettingsController;
+import com.epam.digital.data.platform.settings.api.converter.StringToChannelConverter;
 import com.epam.digital.data.platform.settings.api.model.DetailedErrorResponse;
 import com.epam.digital.data.platform.settings.api.model.FieldsValidationErrorDetails;
+import com.epam.digital.data.platform.settings.api.service.ChannelVerificationService;
 import com.epam.digital.data.platform.settings.api.service.SettingsActivationService;
 import com.epam.digital.data.platform.settings.api.service.SettingsReadService;
 import com.epam.digital.data.platform.settings.api.service.SettingsValidationService;
 import com.epam.digital.data.platform.settings.api.service.TraceService;
 import com.epam.digital.data.platform.settings.api.utils.ResponseCode;
+import com.epam.digital.data.platform.settings.model.dto.ActivateEmailInputDto;
+import com.epam.digital.data.platform.settings.model.dto.Channel;
 import com.epam.digital.data.platform.settings.model.dto.SettingsEmailInputDto;
+import com.epam.digital.data.platform.settings.model.dto.VerificationInputDto;
 import com.epam.digital.data.platform.starter.localization.MessageResolver;
 import com.epam.digital.data.platform.starter.security.PermitAllWebSecurityConfig;
 import com.epam.digital.data.platform.starter.security.exception.JwtParsingException;
@@ -61,7 +67,8 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 @WebMvcTest
 @ContextConfiguration(
-    classes = {SettingsController.class, ApplicationExceptionHandler.class, TokenParser.class})
+    classes = {SettingsController.class, ApplicationExceptionHandler.class, TokenParser.class,
+        StringToChannelConverter.class})
 @Import({TokenProvider.class, PermitAllWebSecurityConfig.class})
 class ApplicationExceptionHandlerTest extends ResponseEntityExceptionHandler {
 
@@ -85,6 +92,8 @@ class ApplicationExceptionHandlerTest extends ResponseEntityExceptionHandler {
   private SettingsValidationService settingsValidationService;
   @MockBean
   private MessageResolver messageResolver;
+  @MockBean
+  private ChannelVerificationService channelVerificationFacade;
 
   @BeforeEach
   void beforeEach() {
@@ -106,7 +115,8 @@ class ApplicationExceptionHandlerTest extends ResponseEntityExceptionHandler {
 
   @Test
   void shouldReturnBadRequestOnHttpNotReadable() throws Exception {
-    when(settingsReadService.findSettingsFromUserToken(any())).thenThrow(HttpMessageNotReadableException.class);
+    when(settingsReadService.findSettingsFromUserToken(any())).thenThrow(
+        HttpMessageNotReadableException.class);
 
     mockMvc
         .perform(get(BASE_URL + "/me").header(X_ACCESS_TOKEN.getHeaderName(), TOKEN))
@@ -135,7 +145,8 @@ class ApplicationExceptionHandlerTest extends ResponseEntityExceptionHandler {
 
   @Test
   void shouldReturn422WithBodyWhenMethodArgumentNotValid() throws Exception {
-    var inputBody = new SettingsEmailInputDto();
+    var inputBody = new ActivateEmailInputDto();
+    inputBody.setVerificationCode("123456");
     String inputStringBody = objectMapper.writeValueAsString(inputBody);
 
     var expectedResponseObject = new DetailedErrorResponse<FieldsValidationErrorDetails>();
@@ -209,5 +220,26 @@ class ApplicationExceptionHandlerTest extends ResponseEntityExceptionHandler {
             jsonPath("$.code").value(is(ResponseCode.VALIDATION_ERROR)));
 
     verify(messageResolver).getMessage("localized message");
+  }
+
+  @Test
+  void shouldReturn400WhenInvalidVerificationCodeException() throws Exception {
+    var payload = new VerificationInputDto();
+    payload.setAddress("");
+
+    var exception = new ChannelVerificationException("message");
+
+    when(channelVerificationFacade.sendVerificationCode(any(Channel.class), any(
+        VerificationInputDto.class), anyString())).thenThrow(exception);
+
+    mockMvc
+        .perform(post(BASE_URL + "/me/channels/email/verify")
+            .header(X_ACCESS_TOKEN.getHeaderName(), TOKEN)
+            .content(objectMapper.writeValueAsString(payload))
+            .contentType(MediaType.APPLICATION_JSON))
+        .andExpectAll(
+            status().isBadRequest(),
+            jsonPath("$.traceId").value(is(TRACE_ID)),
+            jsonPath("$.code").value(is(ResponseCode.VERIFICATION_ERROR)));
   }
 }

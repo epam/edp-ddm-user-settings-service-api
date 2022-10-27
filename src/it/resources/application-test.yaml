@@ -2,16 +2,29 @@ spring:
   zipkin:
     enabled: false
   autoconfigure:
-    exclude: com.epam.digital.data.platform.starter.database.DatabaseAutoConfiguration
+    exclude: 
+      - com.epam.digital.data.platform.starter.database.DatabaseAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
   sql:
     init:
       mode: always
+  redis:
+    enabled: false
 
 data-platform:
   datasource:
     url: ${spring.datasource.url}
     username: ${spring.datasource.username}
     password: ${spring.datasource.password}
+  kafka:
+    bootstrap: localhost:9092
+    topic-properties:
+      num-partitions: 1
+      replication-factor: 1
+      creation:
+        enabled: false
+    ssl:
+      enabled: false
       
 audit:
   kafka:
@@ -20,3 +33,7 @@ audit:
     schema-registry-url: http://localhost:8081
     ssl:
       enabled: false
+
+verification:
+  otp:
+    time-to-live: 60

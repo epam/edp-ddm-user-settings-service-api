@@ -14,27 +14,23 @@
  * limitations under the License.
  */
 
-package com.epam.digital.data.platform.settings.api.service;
+package com.epam.digital.data.platform.settings.api.service.impl;
 
-import com.epam.digital.data.platform.starter.security.jwt.TokenParser;
+import com.epam.digital.data.platform.settings.api.service.VerificationCodeGenerator;
+import java.security.SecureRandom;
 import org.springframework.stereotype.Component;
 
 @Component
-public class JwtInfoProvider {
+public class VerificationCodeGeneratorImpl implements VerificationCodeGenerator {
 
-  private final TokenParser tokenParser;
+  private final SecureRandom secureRandom;
 
-  public JwtInfoProvider(TokenParser tokenParser) {
-    this.tokenParser = tokenParser;
+  public VerificationCodeGeneratorImpl(SecureRandom secureRandom) {
+    this.secureRandom = secureRandom;
   }
 
-  public String getUserId(String accessToken) {
-    var userClaims = tokenParser.parseClaims(accessToken);
-    return userClaims.getSubject();
-  }
-  
-  public String getUsername(String accessToken) {
-    var userClaims = tokenParser.parseClaims(accessToken);
-    return userClaims.getPreferredUsername();
+  @Override
+  public String generate() {
+    return String.format("%06d", secureRandom.nextInt(999999));
   }
 }

@@ -18,14 +18,18 @@ package com.epam.digital.data.platform.settings.api.controller;
 
 import com.epam.digital.data.platform.settings.api.config.TestBeansConfig;
 import com.epam.digital.data.platform.settings.api.service.SettingsActivationService;
+import com.epam.digital.data.platform.settings.api.service.ChannelVerificationService;
 import com.epam.digital.data.platform.settings.api.service.SettingsReadService;
 import com.epam.digital.data.platform.settings.api.service.SettingsValidationService;
 import com.epam.digital.data.platform.settings.api.utils.Header;
+import com.epam.digital.data.platform.settings.model.dto.ActivateEmailInputDto;
 import com.epam.digital.data.platform.settings.model.dto.Channel;
 import com.epam.digital.data.platform.settings.model.dto.ChannelReadDto;
+import com.epam.digital.data.platform.settings.model.dto.VerificationCodeExpirationDto;
 import com.epam.digital.data.platform.settings.model.dto.SettingsEmailInputDto;
 import com.epam.digital.data.platform.settings.model.dto.SettingsDeactivateChannelInputDto;
 import com.epam.digital.data.platform.settings.model.dto.SettingsReadDto;
+import com.epam.digital.data.platform.settings.model.dto.VerificationInputDto;
 import com.epam.digital.data.platform.starter.localization.MessageResolver;
 import com.epam.digital.data.platform.starter.security.PermitAllWebSecurityConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -46,6 +50,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -82,6 +88,8 @@ class SettingsControllerTest {
   private SettingsValidationService settingsValidationService;
   @MockBean
   private MessageResolver messageResolver;
+  @MockBean
+  private ChannelVerificationService channelVerificationService;
 
   @Test
   void expectControllerReturnSettingsFromToken() throws Exception {
@@ -121,8 +129,9 @@ class SettingsControllerTest {
 
   @Test
   void expectControllerActivateEmailChannel() throws Exception {
-    var payload = new SettingsEmailInputDto();
+    var payload = new ActivateEmailInputDto();
     payload.setAddress(EMAIL);
+    payload.setVerificationCode("123456");
 
     mockMvc
         .perform(post(BASE_URL + "/me/channels/email/activate").header(
@@ -132,7 +141,7 @@ class SettingsControllerTest {
         .andExpectAll(
             status().isOk());
 
-    var captor = ArgumentCaptor.forClass(SettingsEmailInputDto.class);
+    var captor = ArgumentCaptor.forClass(ActivateEmailInputDto.class);
     verify(settingsActivationService).activateEmail(captor.capture(), eq(TOKEN));
     assertThat(captor.getValue().getAddress()).isEqualTo(EMAIL);
   }
@@ -165,5 +174,26 @@ class SettingsControllerTest {
     verify(settingsActivationService)
         .deactivateChannel(eq(Channel.DIIA), captor.capture(), eq(TOKEN));
     assertThat(captor.getValue().getDeactivationReason()).isEqualTo("Reason");
+  }
+
+  @Test
+  void expectControllerVerifyEmailChannel() throws Exception {
+    var request = new SettingsEmailInputDto();
+    request.setAddress(EMAIL);
+    when(channelVerificationService.sendVerificationCode(any(Channel.class), any(
+        VerificationInputDto.class), anyString()))
+            .thenReturn(new VerificationCodeExpirationDto(60));
+
+    mockMvc
+            .perform(
+                    post(BASE_URL + "/me/channels/email/verify")
+                            .header(Header.X_ACCESS_TOKEN.getHeaderName(), TOKEN)
+                            .content(objectMapper.writeValueAsString(request))
+                            .contentType(MediaType.APPLICATION_JSON))
+            .andExpectAll(status().isAccepted(),
+                    content().contentType(MediaType.APPLICATION_JSON),
+                    jsonPath("$.verificationCodeExpirationSec", is(60)));
+
+    verify(channelVerificationService).sendVerificationCode(eq(Channel.EMAIL), argThat(dto -> EMAIL.equals(dto.getAddress())), eq(TOKEN));
   }
 }

@@ -17,12 +17,16 @@
 package com.epam.digital.data.platform.settings.api.controller;
 
 import com.epam.digital.data.platform.settings.api.service.SettingsActivationService;
+import com.epam.digital.data.platform.settings.api.service.ChannelVerificationService;
 import com.epam.digital.data.platform.settings.api.service.SettingsReadService;
 import com.epam.digital.data.platform.settings.api.service.SettingsValidationService;
+import com.epam.digital.data.platform.settings.model.dto.ActivateEmailInputDto;
 import com.epam.digital.data.platform.settings.model.dto.Channel;
+import com.epam.digital.data.platform.settings.model.dto.VerificationCodeExpirationDto;
 import com.epam.digital.data.platform.settings.model.dto.SettingsEmailInputDto;
 import com.epam.digital.data.platform.settings.model.dto.SettingsDeactivateChannelInputDto;
 import com.epam.digital.data.platform.settings.model.dto.SettingsReadDto;
+import com.epam.digital.data.platform.settings.model.dto.VerificationInputDto;
 import io.swagger.v3.oas.annotations.Parameter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,13 +52,16 @@ public class SettingsController {
   private final SettingsReadService settingsReadService;
   private final SettingsActivationService activationService;
   private final SettingsValidationService validationService;
+  private final ChannelVerificationService channelVerificationService;
 
   public SettingsController(SettingsReadService settingsReadService,
       SettingsActivationService activationService,
-      SettingsValidationService validationService) {
+      SettingsValidationService validationService,
+      ChannelVerificationService channelVerificationService) {
     this.settingsReadService = settingsReadService;
     this.activationService = activationService;
     this.validationService = validationService;
+    this.channelVerificationService = channelVerificationService;
   }
 
   @GetMapping("/me")
@@ -74,7 +81,7 @@ public class SettingsController {
 
   @PostMapping("/me/channels/email/activate")
   public ResponseEntity<Void> activateEmailChannel(
-      @RequestBody @Valid SettingsEmailInputDto input,
+      @RequestBody @Valid ActivateEmailInputDto input,
       @Parameter(hidden = true) @RequestHeader("X-Access-Token") String accessToken) {
     log.info("Activate email channel is called");
     activationService.activateEmail(input, accessToken);
@@ -97,6 +104,16 @@ public class SettingsController {
     log.info("Deactivate {} channel called", channel);
     activationService.deactivateChannel(channel, input, accessToken);
     return ResponseEntity.status(HttpStatus.OK).build();
+  }
+
+  @PostMapping("/me/channels/{channel}/verify")
+  public ResponseEntity<VerificationCodeExpirationDto> verifyChannelAddress(
+          @PathVariable("channel") Channel channel,
+          @RequestBody @Valid VerificationInputDto input,
+          @Parameter(hidden = true) @RequestHeader("X-Access-Token") String accessToken) {
+    log.info("Channel verification is called");
+    var response = channelVerificationService.sendVerificationCode(channel, input, accessToken);
+    return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
   }
 
   @PostMapping("/me/channels/email/validate")

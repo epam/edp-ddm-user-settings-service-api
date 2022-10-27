@@ -1,11 +1,31 @@
 spring:
   zipkin:
     enabled: false
+  redis:
+    sentinel:
+      master: mymaster
+      nodes:
+        - 127.0.0.1:26379
+        - 127.0.0.1:26380
+        - 127.0.0.1:26381
+    
 data-platform:
   datasource:
     url: jdbc:postgresql://localhost:5432/settings
     username: postgres
     password: postgres
+  kafka:
+    producer:
+      enabled: true
+    bootstrap: localhost:9092
+    topic-properties:
+      num-partitions: 1
+      replication-factor: 1
+      creation:
+        num-partitions: 1
+        replication-factor: 1
+    ssl:
+      enabled: false
 
 server:
   port: 8001
@@ -32,3 +52,7 @@ logging:
     #   Logging patterns inherited from Spring Boot default logging system configuration
     #   add tracing
     console: '%d{${LOG_DATEFORMAT_PATTERN}} [trace:%X{traceId}/%X{spanId}/%X{x-request-id}] ${LOG_LEVEL_PATTERN} %pid --- [%15.15t] %-40.40c{1.} : %m%n${LOG_EXCEPTION_CONVERSION_WORD}'
+
+verification:
+  otp:
+    time-to-live: 300
