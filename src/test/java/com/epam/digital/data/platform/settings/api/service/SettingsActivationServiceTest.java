@@ -200,6 +200,7 @@ class SettingsActivationServiceTest {
 
     settingsActivationService.deactivateChannel(Channel.DIIA, input, "token");
 
-    verify(notificationChannelRepository).deactivateChannel(any(), eq("User deactivated"), any());
+    verify(notificationChannelRepository)
+        .deactivateChannel(any(), eq(null), eq("User deactivated"), any());
   }
 }

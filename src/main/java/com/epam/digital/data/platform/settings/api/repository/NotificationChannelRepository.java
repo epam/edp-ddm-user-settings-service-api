@@ -47,11 +47,15 @@ public interface NotificationChannelRepository extends CrudRepository<Notificati
 
   @Modifying
   @Query(
-      "UPDATE notification_channel SET is_activated=false, "
-          + "deactivation_reason=:deactivationReason, updated_at=:updatedAt "
-          + "WHERE id=:id")
+      "UPDATE notification_channel SET " +
+      "is_activated=false, " +
+      "address=:address, " +
+      "deactivation_reason=:deactivationReason, " +
+      "updated_at=:updatedAt " +
+      "WHERE id=:id")
   void deactivateChannel(
       @Param("id") UUID id,
+      @Param("address") String address,
       @Param("deactivationReason") String deactivationReason,
       @Param("updatedAt") LocalDateTime updatedAt);
 

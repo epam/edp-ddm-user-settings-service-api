@@ -99,8 +99,9 @@ class SettingsAuditFacadeTest {
   void shouldSendDeactivationAuditOnSuccess() {
     var input = new SettingsDeactivateChannelInputDto();
     input.setDeactivationReason("deactivation reason");
+    input.setAddress(EMAIL_ADDRESS);
 
-    auditFacade.sendDeactivationAuditOnSuccess(Channel.EMAIL, EMAIL_ADDRESS, input);
+    auditFacade.sendDeactivationAuditOnSuccess(Channel.EMAIL, input);
     verify(auditService).sendAudit(eventCaptor.capture());
     var event = eventCaptor.getValue();
     var context = event.getContext();
@@ -118,14 +119,14 @@ class SettingsAuditFacadeTest {
     var input = new SettingsDeactivateChannelInputDto();
     input.setDeactivationReason("deactivation reason");
 
-    auditFacade.sendDeactivationAuditOnFailure(Channel.EMAIL, EMAIL_ADDRESS, input, "message");
+    auditFacade.sendDeactivationAuditOnFailure(Channel.EMAIL, input, "message");
     verify(auditService).sendAudit(eventCaptor.capture());
     var event = eventCaptor.getValue();
     var context = event.getContext();
     var deactivation = (DeactivateChannelAuditDto) context.get("deactivation");
     var delivery = (DeliveryAuditDto) context.get("delivery");
 
-    assertThat(deactivation.getAddress()).isEqualTo(EMAIL_ADDRESS);
+    assertThat(deactivation.getAddress()).isNull();
     assertThat(deactivation.getChannel()).isEqualTo(Channel.EMAIL.getValue());
     assertThat(deactivation.getDeactivationReason()).isEqualTo("deactivation reason");
     assertThat(delivery.getStatus()).isEqualTo(Status.FAILURE.name());

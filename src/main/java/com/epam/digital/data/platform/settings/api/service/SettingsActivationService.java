@@ -69,11 +69,11 @@ public class SettingsActivationService {
 
     try {
       if (notificationChannel.isPresent()) {
-        log.info(String.format("Activation of existing %s channel", channel));
+        log.info("Activation of existing {} channel", channel);
         channelRepository.activateChannel(
             notificationChannel.get().getId(), input.getAddress(), LocalDateTime.now());
       } else {
-        log.info(String.format("Creation of activated %s channel", channel));
+        log.info("Creation of activated {} channel", channel);
         channelRepository.create(settings.getId(), channelEnum, input.getAddress(), true, null);
       }
       auditFacade.sendActivationAuditOnSuccess(channelEnum, input);
@@ -88,18 +88,27 @@ public class SettingsActivationService {
     var settings = getSettingsFromToken(accessToken);
     var notificationChannel =
         channelRepository.findBySettingsIdAndChannel(settings.getId(), channel);
-    if (notificationChannel.isPresent()) {
-      log.info("Deactivation of existing channel {}", channel);
-      try {
+    try {
+      if (notificationChannel.isPresent()) {
+        log.info("Deactivation of existing channel {}", channel);
+        var address =
+            input.getAddress() == null
+                ? notificationChannel.get().getAddress()
+                : input.getAddress();
         channelRepository.deactivateChannel(
-            notificationChannel.get().getId(), input.getDeactivationReason(), LocalDateTime.now());
-        auditFacade.sendDeactivationAuditOnSuccess(channel, notificationChannel.get().getAddress(),
-            input);
-      } catch (RuntimeException exception) {
-        auditFacade.sendDeactivationAuditOnFailure(channel, notificationChannel.get().getAddress(),
-            input, exception.getMessage());
-        throw exception;
+            notificationChannel.get().getId(),
+            address,
+            input.getDeactivationReason(),
+            LocalDateTime.now());
+      } else {
+        log.info("Creation of deactivated {} channel", channel);
+        channelRepository.create(
+            settings.getId(), channel, input.getAddress(), false, input.getDeactivationReason());
       }
+      auditFacade.sendDeactivationAuditOnSuccess(channel, input);
+    } catch (RuntimeException exception) {
+      auditFacade.sendDeactivationAuditOnFailure(channel, input, exception.getMessage());
+      throw exception;
     }
   }
 
