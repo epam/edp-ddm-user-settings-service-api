@@ -58,20 +58,21 @@ public class SettingsAuditFacade extends AbstractAuditFacade {
         channel.getValue(), input);
   }
 
-  public void sendDeactivationAuditOnSuccess(Channel channel, String address,
+  public void sendDeactivationAuditOnSuccess(Channel channel,
       SettingsDeactivateChannelInputDto input) {
     this.sendChannelDeactivationAudit(
         Operation.USER_NOTIFICATION_CHANNEL_DEACTIVATION.name(),
         AuditResultDto.builder().status(Status.SUCCESS.name()).build(),
-        channel.getValue(), input, address);
+        channel.getValue(), input);
   }
 
-  public void sendDeactivationAuditOnFailure(Channel channel, String address,
-      SettingsDeactivateChannelInputDto input, String failureReason) {
+  public void sendDeactivationAuditOnFailure(
+      Channel channel, SettingsDeactivateChannelInputDto input, String failureReason) {
     this.sendChannelDeactivationAudit(
         Operation.USER_NOTIFICATION_CHANNEL_DEACTIVATION.name(),
         AuditResultDto.builder().status(Status.FAILURE.name()).failureReason(failureReason).build(),
-        channel.getValue(), input, address);
+        channel.getValue(),
+        input);
   }
 
   private void sendChannelActivationAudit(String action, AuditResultDto result, String channel,
@@ -98,25 +99,28 @@ public class SettingsAuditFacade extends AbstractAuditFacade {
     auditService.sendAudit(event.build());
   }
 
-  private void sendChannelDeactivationAudit(String action, AuditResultDto result, String channel,
-      SettingsDeactivateChannelInputDto deactivateChannelDto,
-      String address) {
-    var event = createBaseAuditEvent(
-        EventType.USER_ACTION, action, MDC.get(MDC_TRACE_ID_HEADER));
+  private void sendChannelDeactivationAudit(
+      String action,
+      AuditResultDto result,
+      String channel,
+      SettingsDeactivateChannelInputDto deactivateChannelDto) {
+    var event = createBaseAuditEvent(EventType.USER_ACTION, action, MDC.get(MDC_TRACE_ID_HEADER));
 
-    var deactivation = DeactivateChannelAuditDto.builder()
-        .channel(channel).address(address).deactivationReason(
-            Objects.nonNull(deactivateChannelDto) ? deactivateChannelDto.getDeactivationReason()
-                : null)
-        .build();
-    var delivery = DeliveryAuditDto.builder()
-        .failureReason(result.getFailureReason())
-        .status(result.getStatus())
-        .channel(channel)
-        .build();
+    var deactivation =
+        DeactivateChannelAuditDto.builder()
+            .channel(channel)
+            .address(deactivateChannelDto.getAddress())
+            .deactivationReason(deactivateChannelDto.getDeactivationReason())
+            .build();
+    var delivery =
+        DeliveryAuditDto.builder()
+            .failureReason(result.getFailureReason())
+            .status(result.getStatus())
+            .channel(channel)
+            .build();
 
-    var context = auditService.createContext(action, Step.AFTER.name(), null, null, null,
-        result.getStatus());
+    var context =
+        auditService.createContext(action, Step.AFTER.name(), null, null, null, result.getStatus());
     context.put("deactivation", deactivation);
     context.put("delivery", delivery);
     event.setContext(context);

@@ -72,6 +72,7 @@ class SettingsControllerIT {
       UUID.fromString("4cb2fb36-df5a-474d-9e82-0a9848231bd6");
 
   private static String TOKEN;
+  private static String TOKEN_2;
 
   @Autowired
   MockMvc mockMvc;
@@ -86,6 +87,7 @@ class SettingsControllerIT {
   @BeforeAll
   static void init() throws IOException {
     TOKEN = readClassPathResource("/token.txt");
+    TOKEN_2 = readClassPathResource("/token2.txt");
   }
 
   @Test
@@ -116,9 +118,9 @@ class SettingsControllerIT {
             status().isOk(),
             content().contentType(MediaType.APPLICATION_JSON),
             jsonPath("$.settingsId", is(SETTINGS_ID_2.toString())),
-            jsonPath("$.channels[0].channel", is(Channel.EMAIL.getValue())),
+            jsonPath("$.channels[0].channel", is(Channel.DIIA.getValue())),
             jsonPath("$.channels[0].activated", is(true)),
-            jsonPath("$.channels[0].address", is(EMAIL_2)),
+            jsonPath("$.channels[0].address").doesNotExist(),
             jsonPath("$.channels[0].deactivationReason").doesNotExist());
   }
 
@@ -184,20 +186,70 @@ class SettingsControllerIT {
 
     mockMvc
         .perform(
-            post(BASE_URL + "/me/channels/email/deactivate")
+            post(BASE_URL + "/me/channels/diia/deactivate")
                 .header(X_ACCESS_TOKEN.getHeaderName(), TOKEN)
                 .content(objectMapper.writeValueAsString(input))
                 .contentType(MediaType.APPLICATION_JSON))
         .andExpectAll(status().isOk());
 
-    var activatedChannel =
+    var deactivatedChannel =
         notificationChannelRepository.findBySettingsIdAndChannel(SETTINGS_ID_1, Channel.DIIA).get();
 
-    assertThat(activatedChannel.getSettingsId()).isEqualTo(SETTINGS_ID_1);
-    assertThat(activatedChannel.getChannel()).isEqualTo(Channel.DIIA);
-    assertThat(activatedChannel.getAddress()).isNull();
-    assertThat(activatedChannel.isActivated()).isFalse();
-    assertThat(activatedChannel.getDeactivationReason()).isEqualTo("User deactivated");
+    assertThat(deactivatedChannel.getSettingsId()).isEqualTo(SETTINGS_ID_1);
+    assertThat(deactivatedChannel.getChannel()).isEqualTo(Channel.DIIA);
+    assertThat(deactivatedChannel.getAddress()).isNull();
+    assertThat(deactivatedChannel.isActivated()).isFalse();
+    assertThat(deactivatedChannel.getDeactivationReason()).isEqualTo("User deactivated");
+  }
+
+  @Test
+  void shouldDeactivateChannelWithUpdatedAddress() throws Exception {
+    var input = new SettingsDeactivateChannelInputDto();
+    input.setAddress(EMAIL_2);
+    input.setDeactivationReason("User deactivated");
+
+    mockMvc
+            .perform(
+                    post(BASE_URL + "/me/channels/email/deactivate")
+                            .header(X_ACCESS_TOKEN.getHeaderName(), TOKEN)
+                            .content(objectMapper.writeValueAsString(input))
+                            .contentType(MediaType.APPLICATION_JSON))
+            .andExpectAll(status().isOk());
+
+    var deactivatedChannel =
+            notificationChannelRepository.findBySettingsIdAndChannel(SETTINGS_ID_1, Channel.EMAIL).get();
+
+    assertThat(deactivatedChannel.getSettingsId()).isEqualTo(SETTINGS_ID_1);
+    assertThat(deactivatedChannel.getChannel()).isEqualTo(Channel.EMAIL);
+    assertThat(deactivatedChannel.getAddress()).isEqualTo(EMAIL_2);
+    assertThat(deactivatedChannel.isActivated()).isFalse();
+    assertThat(deactivatedChannel.getDeactivationReason()).isEqualTo("User deactivated");
+  }
+
+  @Test
+  void shouldCreateDeactivatedChannel() throws Exception {
+    var input = new SettingsDeactivateChannelInputDto();
+    input.setDeactivationReason("Address deactivated");
+    input.setAddress(EMAIL_2);
+
+    mockMvc
+        .perform(
+            post(BASE_URL + "/me/channels/email/deactivate")
+                .header(X_ACCESS_TOKEN.getHeaderName(), TOKEN_2)
+                .content(objectMapper.writeValueAsString(input))
+                .contentType(MediaType.APPLICATION_JSON))
+        .andExpectAll(status().isOk());
+
+    var deactivatedChannel =
+        notificationChannelRepository
+            .findBySettingsIdAndChannel(SETTINGS_ID_2, Channel.EMAIL)
+             .get();
+
+    assertThat(deactivatedChannel.getSettingsId()).isEqualTo(SETTINGS_ID_2);
+    assertThat(deactivatedChannel.getChannel()).isEqualTo(Channel.EMAIL);
+    assertThat(deactivatedChannel.getAddress()).isEqualTo(EMAIL_2);
+    assertThat(deactivatedChannel.isActivated()).isFalse();
+    assertThat(deactivatedChannel.getDeactivationReason()).isEqualTo("Address deactivated");
   }
 
   @Test

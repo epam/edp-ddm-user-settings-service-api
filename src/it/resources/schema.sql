@@ -44,5 +44,5 @@ INSERT INTO notification_channel (
 	 'settings@gmail.com', NULL, TRUE),
 	('9b85f2f0-4a1f-4539-bc8a-845e90e42441', '321e7654-e89b-12d3-a456-426655441111', 'DIIA',
      NULL, 'User deactivated', FALSE),
-    ('9bbfabb6-b110-40fc-9095-2cbbf8fe6cc9', '7f18fd5f-d68e-4609-85a8-eb5745488ac2', 'EMAIL',
-     'settings2@yahoo.com', NULL, TRUE);
+    ('9bbfabb6-b110-40fc-9095-2cbbf8fe6cc9', '7f18fd5f-d68e-4609-85a8-eb5745488ac2', 'DIIA',
+     NULL, NULL, TRUE);

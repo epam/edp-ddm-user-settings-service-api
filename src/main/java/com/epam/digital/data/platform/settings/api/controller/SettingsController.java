@@ -79,7 +79,8 @@ public class SettingsController {
   }
 
   @PostMapping("/me/channels/{channel}/activate")
-  public ResponseEntity<Void> activateDiiaChannel(@PathVariable("channel") String channel,
+  public ResponseEntity<Void> activateChannel(
+      @PathVariable("channel") String channel,
       @RequestBody @Valid ActivateChannelInputDto input,
       @Parameter(hidden = true) @RequestHeader("X-Access-Token") String accessToken) {
     log.info("Activate diia channel is called");

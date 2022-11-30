@@ -11,7 +11,7 @@
 	<description>user-settings-service-api</description>
 
 	<properties>
-		<model.version>1.8.0.5</model.version>
+		<model.version>1.8.0.6</model.version>
 		<ddm.starter.logger2.version>1.6.0.5</ddm.starter.logger2.version>
 		<ddm.starter.actuator.version>1.6.0.3</ddm.starter.actuator.version>
 		<ddm.starter.swagger.version>1.6.0.1</ddm.starter.swagger.version>
