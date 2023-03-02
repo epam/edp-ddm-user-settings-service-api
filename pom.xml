@@ -25,7 +25,7 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>11</java.version>
 		<spring-boot-maven-plugin.version>2.7.5</spring-boot-maven-plugin.version>
-		<spring.boot.version>2.6.1</spring.boot.version>
+		<spring.boot.version>2.6.14</spring.boot.version>
 		<spring.cloud.version>2021.0.0</spring.cloud.version>
 		<ddm.starter.database.version>1.6.0.1</ddm.starter.database.version>
 		<ddm-starter-localization.version>1.6.0.1</ddm-starter-localization.version>
