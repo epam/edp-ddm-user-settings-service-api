@@ -14,4 +14,11 @@ spec:
         - name: X-Access-Token
       issuer: {{ template "issuer.citizen" . }}
       jwksUri: {{ template "jwksUri.citizen" . }}
+    {{- if .Values.keycloak.customHost }}
+    - forwardOriginalToken: true
+      fromHeaders:
+        - name: X-Access-Token
+      issuer: {{ template "custom-issuer.citizen" . }}
+      jwksUri: {{ template "jwksUri.citizen" . }}
+    {{- end }}
 {{- end }}
