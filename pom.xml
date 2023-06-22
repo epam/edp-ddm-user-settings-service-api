@@ -16,11 +16,11 @@
 		<ddm.starter.actuator.version>1.6.0.3</ddm.starter.actuator.version>
 		<ddm.starter.swagger.version>1.6.0.1</ddm.starter.swagger.version>
 		<ddm.starter.audit.version>1.8.0.1</ddm.starter.audit.version>
-		<ddm.starter.security.version>1.6.0.1</ddm.starter.security.version>
+		<ddm.starter.security.version>1.6.0.14</ddm.starter.security.version>
 		<log4j.version>2.17.0</log4j.version>
 		<spring-data-redis.version>2.7.0</spring-data-redis.version>
 		<lettuce.version>6.1.8.RELEASE</lettuce.version>
-		<ddm-starter-notifications.version>1.6.0.4</ddm-starter-notifications.version>
+		<ddm-starter-notifications.version>1.6.0.7</ddm-starter-notifications.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>11</java.version>

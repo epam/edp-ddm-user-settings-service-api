@@ -35,6 +35,10 @@ INSERT INTO settings (id, keycloak_id) VALUES
 (
     '7f18fd5f-d68e-4609-85a8-eb5745488ac2',
     '4cb2fb36-df5a-474d-9e82-0a9848231bd6'
+),
+(
+    '321e7654-e89b-12d3-a456-426655441112',
+    '46f36b22-a4bd-45b0-8e48-98dc38ba0e33'
 );
 
 INSERT INTO notification_channel (
@@ -42,7 +46,5 @@ INSERT INTO notification_channel (
 	VALUES
 	('69d24728-6d59-4513-9919-69e5e1546762', '321e7654-e89b-12d3-a456-426655441111', 'EMAIL',
 	 'settings@gmail.com', NULL, TRUE),
-	('9b85f2f0-4a1f-4539-bc8a-845e90e42441', '321e7654-e89b-12d3-a456-426655441111', 'DIIA',
-     NULL, 'User deactivated', FALSE),
-    ('9bbfabb6-b110-40fc-9095-2cbbf8fe6cc9', '7f18fd5f-d68e-4609-85a8-eb5745488ac2', 'DIIA',
-     NULL, NULL, TRUE);
+    ('9b85f2f0-4a1f-4539-bc8a-845e90e42442', '321e7654-e89b-12d3-a456-426655441112', 'DIIA',
+     NULL, 'User deactivated', FALSE);

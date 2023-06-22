@@ -1,5 +1,5 @@
 /*
- *  Copyright 2021 EPAM Systems.
+ *  Copyright 2023 EPAM Systems.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -80,7 +80,7 @@ public class SettingsController {
 
   @PostMapping("/me/channels/{channel}/activate")
   public ResponseEntity<Void> activateChannel(
-      @PathVariable("channel") String channel,
+      @PathVariable("channel") Channel channel,
       @RequestBody @Valid ActivateChannelInputDto input,
       @Parameter(hidden = true) @RequestHeader("X-Access-Token") String accessToken) {
     log.info("Activate diia channel is called");

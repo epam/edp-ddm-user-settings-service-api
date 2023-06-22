@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 EPAM Systems.
+ * Copyright 2023 EPAM Systems.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ public class SettingsValidationService {
     if (Objects.isNull(address) || address.isEmpty()) {
       throw new EmailAddressValidationException("Email address is empty", EMAIL_ADDRESS_EMPTY_KEY);
     }
-    if (!address.matches(EMAIL_REGEX)) {
+    if (!address.matches(EMAIL_REGEX)) {    //NOSONAR
       throw new EmailAddressValidationException("Email address is not valid", EMAIL_ADDRESS_NOT_VALID_KEY);
     }
     return true;

@@ -18,12 +18,24 @@
 {{- printf "%s-%s" (include "keycloak.urlPrefix" .) .Values.keycloak.realms.citizen -}}
 {{- end -}}
 
+{{- define "issuer.officer" -}}
+{{- printf "%s-%s" (include "keycloak.urlPrefix" .) .Values.keycloak.realms.officer -}}
+{{- end -}}
+
 {{- define "custom-issuer.citizen" -}}
 {{- printf "%s-%s" (include "keycloak.customUrlPrefix" .) .Values.keycloak.realms.citizen -}}
 {{- end -}}
 
+{{- define "custom-issuer.officer" -}}
+{{- printf "%s-%s" (include "keycloak.customUrlPrefix" .) .Values.keycloak.realms.officer -}}
+{{- end -}}
+
 {{- define "jwksUri.citizen" -}}
 {{- printf "%s-%s%s" (include "keycloak.urlPrefix" .) .Values.keycloak.realms.citizen .Values.keycloak.certificatesEndpoint -}}
+{{- end -}}
+
+{{- define "jwksUri.officer" -}}
+{{- printf "%s-%s%s" (include "keycloak.urlPrefix" .) .Values.keycloak.realms.officer .Values.keycloak.certificatesEndpoint -}}
 {{- end -}}
 
 

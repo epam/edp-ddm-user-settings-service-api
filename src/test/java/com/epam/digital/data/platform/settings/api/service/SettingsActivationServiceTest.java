@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 EPAM Systems.
+ * Copyright 2023 EPAM Systems.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,11 +32,13 @@ import com.epam.digital.data.platform.settings.model.dto.SettingsDeactivateChann
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
 
 @ExtendWith(MockitoExtension.class)
 class SettingsActivationServiceTest {
@@ -61,13 +63,13 @@ class SettingsActivationServiceTest {
   private SettingsAuditFacade auditFacade;
   @Mock
   private ChannelVerificationService channelVerificationService;
+  @Mock
+  private UserRoleVerifierService userRoleVerifierService;
 
   @BeforeEach
   void beforeEach() {
     settingsActivationService = new SettingsActivationService(notificationChannelRepository,
-        settingsRepository, jwtInfoProvider, auditFacade, channelVerificationService);
-
-    when(jwtInfoProvider.getUserId(any())).thenReturn(TOKEN_SUBJECT_ID.toString());
+        settingsRepository, jwtInfoProvider, auditFacade, channelVerificationService, userRoleVerifierService);
   }
 
   @Test
@@ -95,11 +97,25 @@ class SettingsActivationServiceTest {
         Channel.EMAIL)).thenReturn(Optional.of(channelFromDb));
     when(channelVerificationService.verify(Channel.EMAIL, "token", "123456", "new@email.com"))
         .thenReturn(true);
+    when(jwtInfoProvider.getUserId(any())).thenReturn(TOKEN_SUBJECT_ID.toString());
+    when(userRoleVerifierService.verify(Channel.EMAIL, "token")).thenReturn(true);
 
-    settingsActivationService.activateChannel(inputDto, "email", "token");
+    settingsActivationService.activateChannel(inputDto, Channel.EMAIL, "token");
 
     verify(notificationChannelRepository)
         .activateChannel(eq(NOTIFICATION_CHANNEL_ID), eq("new@email.com"), any());
+  }
+
+  @Test
+  void expectActivateNotPassUserRoleVerification() {
+    when(userRoleVerifierService.verify(Channel.DIIA, "token")).thenReturn(false);
+
+    Assertions.assertThatThrownBy(
+            () -> settingsActivationService.activateChannel(null, Channel.DIIA, "token"))
+        .isInstanceOf(AccessDeniedException.class)
+        .hasMessage("Invalid user role for activate operation");
+    verify(auditFacade)
+        .sendActivationAuditOnFailure(Channel.DIIA, null, "User role verification failed");
   }
 
   @Test
@@ -117,8 +133,10 @@ class SettingsActivationServiceTest {
         .thenReturn(Optional.empty());
     when(channelVerificationService.verify(Channel.EMAIL, "token", "123456", "new@email.com"))
         .thenReturn(true);
+    when(jwtInfoProvider.getUserId(any())).thenReturn(TOKEN_SUBJECT_ID.toString());
+    when(userRoleVerifierService.verify(Channel.EMAIL, "token")).thenReturn(true);
 
-    settingsActivationService.activateChannel(inputDto, "email", "token");
+    settingsActivationService.activateChannel(inputDto, Channel.EMAIL, "token");
 
     verify(notificationChannelRepository)
         .create(SETTINGS_ID, Channel.EMAIL, "new@email.com", true, null);
@@ -148,9 +166,12 @@ class SettingsActivationServiceTest {
             Channel.DIIA)).thenReturn(Optional.of(channelFromDb));
     when(channelVerificationService.verify(Channel.DIIA, "token", "123456", drfo))
         .thenReturn(true);
+    when(jwtInfoProvider.getUserId(any())).thenReturn(TOKEN_SUBJECT_ID.toString());
+    when(userRoleVerifierService.verify(Channel.DIIA, "token")).thenReturn(true);
 
-    settingsActivationService.activateChannel(inputDto, "diia", "token");
+    settingsActivationService.activateChannel(inputDto, Channel.DIIA, "token");
 
+    verify(userRoleVerifierService).verify(Channel.DIIA, "token");
     verify(notificationChannelRepository)
             .activateChannel(eq(NOTIFICATION_CHANNEL_ID), eq(drfo), any());
   }
@@ -171,9 +192,12 @@ class SettingsActivationServiceTest {
             .thenReturn(Optional.empty());
     when(channelVerificationService.verify(Channel.DIIA, "token", "123456", drfo))
         .thenReturn(true);
+    when(jwtInfoProvider.getUserId(any())).thenReturn(TOKEN_SUBJECT_ID.toString());
+    when(userRoleVerifierService.verify(Channel.DIIA, "token")).thenReturn(true);
 
-    settingsActivationService.activateChannel(inputDto, "diia", "token");
+    settingsActivationService.activateChannel(inputDto, Channel.DIIA, "token");
 
+    verify(userRoleVerifierService).verify(Channel.DIIA, "token");
     verify(notificationChannelRepository)
             .create(SETTINGS_ID, Channel.DIIA, drfo, true, null);
   }
@@ -194,13 +218,28 @@ class SettingsActivationServiceTest {
     when(settingsRepository.getByKeycloakId(TOKEN_SUBJECT_ID)).thenReturn(settingsFromDb);
     when(notificationChannelRepository.findBySettingsIdAndChannel(SETTINGS_ID, Channel.DIIA))
         .thenReturn(Optional.of(channelFromDb));
+    when(jwtInfoProvider.getUserId(any())).thenReturn(TOKEN_SUBJECT_ID.toString());
+    when(userRoleVerifierService.verify(Channel.DIIA, "token")).thenReturn(true);
 
     var input = new SettingsDeactivateChannelInputDto();
     input.setDeactivationReason(DEACTIVATION_REASON);
 
     settingsActivationService.deactivateChannel(Channel.DIIA, input, "token");
 
+    verify(userRoleVerifierService).verify(Channel.DIIA, "token");
     verify(notificationChannelRepository)
         .deactivateChannel(any(), eq(null), eq("User deactivated"), any());
+  }
+
+  @Test
+  void expectDeactivateNotPassUserRoleVerification() {
+    when(userRoleVerifierService.verify(Channel.DIIA, "token")).thenReturn(false);
+
+    Assertions.assertThatThrownBy(
+            () -> settingsActivationService.deactivateChannel(Channel.DIIA, null, "token"))
+        .isInstanceOf(AccessDeniedException.class)
+        .hasMessage("Invalid user role for deactivate operation");
+    verify(auditFacade)
+        .sendDeactivationAuditOnFailure(Channel.DIIA, null, "User role verification failed");
   }
 }

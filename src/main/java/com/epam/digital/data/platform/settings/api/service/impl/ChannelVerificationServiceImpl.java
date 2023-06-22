@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 EPAM Systems.
+ * Copyright 2023 EPAM Systems.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,24 @@
 
 package com.epam.digital.data.platform.settings.api.service.impl;
 
+import com.epam.digital.data.platform.notification.dto.Recipient;
 import com.epam.digital.data.platform.settings.api.entity.OtpEntity;
 import com.epam.digital.data.platform.settings.api.model.OtpData;
 import com.epam.digital.data.platform.settings.api.repository.OtpRepository;
 import com.epam.digital.data.platform.settings.api.service.ChannelVerificationService;
 import com.epam.digital.data.platform.settings.api.service.JwtInfoProvider;
 import com.epam.digital.data.platform.settings.api.service.NotificationService;
+import com.epam.digital.data.platform.settings.api.service.UserRoleVerifierService;
 import com.epam.digital.data.platform.settings.api.service.VerificationCodeGenerator;
 import com.epam.digital.data.platform.settings.model.dto.Channel;
 import com.epam.digital.data.platform.settings.model.dto.VerificationCodeExpirationDto;
 import com.epam.digital.data.platform.settings.model.dto.VerificationInputDto;
+import com.epam.digital.data.platform.starter.security.SystemRole;
+import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -41,6 +46,7 @@ public class ChannelVerificationServiceImpl implements ChannelVerificationServic
   private final JwtInfoProvider jwtInfoProvider;
   private final VerificationCodeGenerator generator;
   private final NotificationService notificationService;
+  private final UserRoleVerifierService userRoleVerifierService;
   private final int ttl;
 
 
@@ -49,17 +55,23 @@ public class ChannelVerificationServiceImpl implements ChannelVerificationServic
       JwtInfoProvider jwtInfoProvider,
       VerificationCodeGenerator generator,
       NotificationService notificationService,
+      UserRoleVerifierService userRoleVerifierService,
       @Value("${verification.otp.time-to-live}") int ttl) {
     this.repository = repository;
     this.jwtInfoProvider = jwtInfoProvider;
     this.generator = generator;
     this.notificationService = notificationService;
+    this.userRoleVerifierService = userRoleVerifierService;
     this.ttl = ttl;
   }
 
   @Override
   public VerificationCodeExpirationDto sendVerificationCode(Channel channel,
       VerificationInputDto input, String accessToken) {
+
+    if (!userRoleVerifierService.verify(channel, accessToken)) {
+      throw new AccessDeniedException("Invalid user role for verify operation");
+    }
 
     var userId = jwtInfoProvider.getUserId(accessToken);
     var username = jwtInfoProvider.getUsername(accessToken);
@@ -70,7 +82,8 @@ public class ChannelVerificationServiceImpl implements ChannelVerificationServic
         OtpEntity.builder().id(id).otpData(new OtpData(input.getAddress(), otpCode)).build()
     );
 
-    notificationService.sendNotification(channel, input.getAddress(), username, otpCode);
+    notificationService.sendNotification(
+        channel, input.getAddress(), username, otpCode, getRecipientRealm(accessToken));
 
     return new VerificationCodeExpirationDto(ttl);
   }
@@ -101,6 +114,17 @@ public class ChannelVerificationServiceImpl implements ChannelVerificationServic
         && otpEntity.get().getOtpData().getVerificationCode().equals(verificationCode)
         && otpEntity.get().getOtpData().getAddress().equals(address)
         && channelSpecificVerifications(channel, accessToken, address);
+  }
+
+  private Recipient.RecipientRealm getRecipientRealm(String accessToken) {
+    var roles = jwtInfoProvider.getUserRoles(accessToken);
+    if (CollectionUtils.containsAny(
+        roles, SystemRole.OFFICER.getName(), SystemRole.UNREGISTERED_OFFICER.getName())) {
+      return Recipient.RecipientRealm.OFFICER;
+    } else if(roles.contains(SystemRole.CITIZEN.getName())){
+      return Recipient.RecipientRealm.CITIZEN;
+    }
+    return null;
   }
 
   private boolean channelSpecificVerifications(Channel channel, String accessToken, String address) {

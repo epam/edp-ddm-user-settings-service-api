@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 EPAM Systems.
+ * Copyright 2023 EPAM Systems.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package com.epam.digital.data.platform.settings.api.service;
+
+import java.util.List;
 
 import com.epam.digital.data.platform.starter.security.jwt.TokenParser;
 import org.springframework.stereotype.Component;
@@ -41,5 +43,10 @@ public class JwtInfoProvider {
   public String getDrfo(String accessToken) {
     var userClaims = tokenParser.parseClaims(accessToken);
     return userClaims.getDrfo();
+  }
+
+  public List<String> getUserRoles(String accessToken) {
+    var userClaims = tokenParser.parseClaims(accessToken);
+    return userClaims.getRoles();
   }
 }
