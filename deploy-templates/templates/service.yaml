@@ -1,4 +1,4 @@
-{{- if or (not .Values.global.excludePortals) (not (has "citizen" .Values.global.excludePortals)) }}
+{{- if or (not .Values.global.excludePortals) (not (has "citizen" .Values.global.excludePortals)) (not (has "officer" .Values.global.excludePortals)) }}
 apiVersion: v1
 kind: Service
 metadata:

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 EPAM Systems.
+ * Copyright 2023 EPAM Systems.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.epam.digital.data.platform.settings.api.service;
 
+import com.epam.digital.data.platform.starter.security.SystemRole;
 import com.epam.digital.data.platform.starter.security.dto.JwtClaimsDto;
 import com.epam.digital.data.platform.starter.security.jwt.TokenParser;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,6 +28,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+
+import java.util.List;
 
 @ExtendWith(MockitoExtension.class)
 class JwtInfoProviderTest {
@@ -51,5 +54,18 @@ class JwtInfoProviderTest {
     var actual = jwtInfoProvider.getUserId("token");
 
     assertThat(actual).isEqualTo("subject");
+  }
+
+  @Test
+  void containsUserRole() {
+    JwtClaimsDto jwtClaimsDto = new JwtClaimsDto();
+    List<String> roles = List.of("officer", "auditor", "task-dispatcher");
+    jwtClaimsDto.setRoles(roles);
+
+    when(tokenParser.parseClaims(any())).thenReturn(jwtClaimsDto);
+
+    var actual = jwtInfoProvider.getUserRoles("token");
+
+    assertThat(actual).isEqualTo(roles);
   }
 }

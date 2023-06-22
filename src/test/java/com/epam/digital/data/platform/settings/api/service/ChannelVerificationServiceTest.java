@@ -1,3 +1,19 @@
+/*
+ * Copyright 2023 EPAM Systems.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.epam.digital.data.platform.settings.api.service;
 
 import static org.apache.commons.lang3.StringUtils.EMPTY;
@@ -6,13 +22,17 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.epam.digital.data.platform.notification.dto.Recipient;
 import com.epam.digital.data.platform.settings.api.entity.OtpEntity;
 import com.epam.digital.data.platform.settings.api.model.OtpData;
 import com.epam.digital.data.platform.settings.api.repository.OtpRepository;
 import com.epam.digital.data.platform.settings.api.service.impl.ChannelVerificationServiceImpl;
 import com.epam.digital.data.platform.settings.model.dto.Channel;
 import com.epam.digital.data.platform.settings.model.dto.VerificationInputDto;
+import com.epam.digital.data.platform.starter.security.SystemRole;
+import java.util.List;
 import java.util.Optional;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,6 +40,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
 
 @ExtendWith(MockitoExtension.class)
 class ChannelVerificationServiceTest {
@@ -45,14 +66,16 @@ class ChannelVerificationServiceTest {
   private VerificationCodeGenerator generator;
   @Mock
   private NotificationService notificationService;
+  @Mock
+  private UserRoleVerifierService userRoleVerifierService;
 
   private ChannelVerificationService channelVerificationService;
 
   @BeforeEach
   public void beforeEach() {
     channelVerificationService = new ChannelVerificationServiceImpl(repository,
-        jwtInfoProvider, generator, notificationService, OTP_TTL);
-    when(jwtInfoProvider.getUserId(VALID_ACCESS_TOKEN)).thenReturn(USER_ID);
+        jwtInfoProvider, generator, notificationService, userRoleVerifierService, OTP_TTL);
+
   }
 
   @Test
@@ -62,6 +85,9 @@ class ChannelVerificationServiceTest {
     when(jwtInfoProvider.getUsername(VALID_ACCESS_TOKEN)).thenReturn(USER_NAME);
     var inputDto = new VerificationInputDto();
     inputDto.setAddress(VALID_EMAIL_ADDRESS);
+    when(userRoleVerifierService.verify(EMAIL_CHANNEL, VALID_ACCESS_TOKEN)).thenReturn(true);
+    when(jwtInfoProvider.getUserRoles(VALID_ACCESS_TOKEN)).thenReturn(List.of(SystemRole.CITIZEN.getName()));
+    when(jwtInfoProvider.getUserId(VALID_ACCESS_TOKEN)).thenReturn(USER_ID);
 
     var response = channelVerificationService.sendVerificationCode(EMAIL_CHANNEL,
         inputDto, VALID_ACCESS_TOKEN);
@@ -80,13 +106,27 @@ class ChannelVerificationServiceTest {
     var addressCaptor = ArgumentCaptor.forClass(String.class);
     var usernameCaptor = ArgumentCaptor.forClass(String.class);
     var otpCodeCaptor = ArgumentCaptor.forClass(String.class);
+    var realmCaptor = ArgumentCaptor.forClass(Recipient.RecipientRealm.class);
     verify(notificationService).sendNotification(channelCaptor.capture(), addressCaptor.capture(),
-        usernameCaptor.capture(), otpCodeCaptor.capture());
+        usernameCaptor.capture(), otpCodeCaptor.capture(), realmCaptor.capture());
 
     assertThat(channelCaptor.getValue()).isEqualTo(EMAIL_CHANNEL);
     assertThat(addressCaptor.getValue()).isEqualTo(VALID_EMAIL_ADDRESS);
     assertThat(usernameCaptor.getValue()).isEqualTo(USER_NAME);
     assertThat(otpCodeCaptor.getValue()).isEqualTo(VALID_OTP_CODE);
+    assertThat(realmCaptor.getValue()).isEqualTo(Recipient.RecipientRealm.CITIZEN);
+  }
+
+  @Test
+  void shouldNotPassUserRoleVerification() {
+    when(userRoleVerifierService.verify(EMAIL_CHANNEL, VALID_ACCESS_TOKEN)).thenReturn(false);
+
+    Assertions.assertThatThrownBy(
+            () ->
+                channelVerificationService.sendVerificationCode(
+                    EMAIL_CHANNEL, null, VALID_ACCESS_TOKEN))
+        .isInstanceOf(AccessDeniedException.class)
+        .hasMessage("Invalid user role for verify operation");
   }
 
   @Test
@@ -96,6 +136,7 @@ class ChannelVerificationServiceTest {
         .otpData(new OtpData(VALID_EMAIL_ADDRESS, VALID_OTP_CODE))
         .build();
     when(repository.findById(VALID_RECORD_KEY)).thenReturn(Optional.of(otpEntity));
+    when(jwtInfoProvider.getUserId(VALID_ACCESS_TOKEN)).thenReturn(USER_ID);
 
     var isValid = channelVerificationService.verify(EMAIL_CHANNEL, VALID_ACCESS_TOKEN,
         VALID_OTP_CODE, VALID_EMAIL_ADDRESS);
@@ -110,6 +151,7 @@ class ChannelVerificationServiceTest {
         .otpData(new OtpData(VALID_EMAIL_ADDRESS, VALID_OTP_CODE))
         .build();
     when(repository.findById(VALID_RECORD_KEY)).thenReturn(Optional.of(otpEntity));
+    when(jwtInfoProvider.getUserId(VALID_ACCESS_TOKEN)).thenReturn(USER_ID);
 
     var isValid = channelVerificationService.verify(EMAIL_CHANNEL, VALID_ACCESS_TOKEN,
         "111111", VALID_EMAIL_ADDRESS);
@@ -124,6 +166,7 @@ class ChannelVerificationServiceTest {
         .otpData(new OtpData(VALID_EMAIL_ADDRESS, VALID_OTP_CODE))
         .build();
     when(repository.findById(VALID_RECORD_KEY)).thenReturn(Optional.of(otpEntity));
+    when(jwtInfoProvider.getUserId(VALID_ACCESS_TOKEN)).thenReturn(USER_ID);
 
     var isValid = channelVerificationService.verify(EMAIL_CHANNEL, VALID_ACCESS_TOKEN,
         VALID_OTP_CODE, "invalid@email.addr");
@@ -154,6 +197,7 @@ class ChannelVerificationServiceTest {
         .otpData(new OtpData(drfo, VALID_OTP_CODE))
         .build();
     when(repository.findById(VALID_DIIA_RECORD_KEY)).thenReturn(Optional.of(otpEntity));
+    when(jwtInfoProvider.getUserId(VALID_ACCESS_TOKEN)).thenReturn(USER_ID);
 
     var isValid = channelVerificationService.verify(Channel.DIIA, VALID_ACCESS_TOKEN,
         VALID_OTP_CODE, drfo);
@@ -172,6 +216,7 @@ class ChannelVerificationServiceTest {
         .otpData(new OtpData(drfo, VALID_OTP_CODE))
         .build();
     when(repository.findById(VALID_DIIA_RECORD_KEY)).thenReturn(Optional.of(otpEntity));
+    when(jwtInfoProvider.getUserId(VALID_ACCESS_TOKEN)).thenReturn(USER_ID);
 
     var isValid = channelVerificationService.verify(Channel.DIIA, VALID_ACCESS_TOKEN,
         VALID_OTP_CODE, drfo);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 EPAM Systems.
+ * Copyright 2023 EPAM Systems.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -40,51 +41,65 @@ public class SettingsActivationService {
   private final JwtInfoProvider jwtInfoProvider;
   private final SettingsAuditFacade auditFacade;
   private final ChannelVerificationService channelVerificationService;
+  private final UserRoleVerifierService userRoleVerifierService;
 
   public SettingsActivationService(
       NotificationChannelRepository channelRepository,
       SettingsRepository settingsRepository,
       JwtInfoProvider jwtInfoProvider,
       SettingsAuditFacade auditFacade,
-      ChannelVerificationService channelVerificationService) {
+      ChannelVerificationService channelVerificationService,
+      UserRoleVerifierService userRoleVerifierService) {
     this.channelRepository = channelRepository;
     this.settingsRepository = settingsRepository;
     this.jwtInfoProvider = jwtInfoProvider;
     this.auditFacade = auditFacade;
     this.channelVerificationService = channelVerificationService;
+    this.userRoleVerifierService = userRoleVerifierService;
   }
 
-  public void activateChannel(ActivateChannelInputDto input, String channel, String accessToken) {
-    var channelEnum = Channel.valueOf(channel.toUpperCase());
-    boolean successfullyVerified = channelVerificationService
-        .verify(channelEnum, accessToken, input.getVerificationCode(), input.getAddress());
+  public void activateChannel(ActivateChannelInputDto input, Channel channel, String accessToken) {
+    if (!userRoleVerifierService.verify(channel, accessToken)) {
+      auditFacade.sendActivationAuditOnFailure(channel, input, "User role verification failed");
+      throw new AccessDeniedException("Invalid user role for activate operation");
+    }
+
+    boolean successfullyVerified =
+        channelVerificationService.verify(
+            channel, accessToken, input.getVerificationCode(), input.getAddress());
     if (!successfullyVerified) {
-      auditFacade.sendActivationAuditOnFailure(channelEnum, input,
-          "Communication channel verification failed");
+      auditFacade.sendActivationAuditOnFailure(
+          channel, input, "Communication channel verification failed");
       throw new ChannelVerificationException("Communication channel verification failed");
     }
     var settings = getSettingsFromToken(accessToken);
     var notificationChannel =
-        channelRepository.findBySettingsIdAndChannel(settings.getId(), channelEnum);
+        channelRepository.findBySettingsIdAndChannel(settings.getId(), channel);
 
     try {
       if (notificationChannel.isPresent()) {
-        log.info("Activation of existing {} channel", channel);
+        log.info("Activation of existing {} channel", channel.getValue());
         channelRepository.activateChannel(
             notificationChannel.get().getId(), input.getAddress(), LocalDateTime.now());
       } else {
-        log.info("Creation of activated {} channel", channel);
-        channelRepository.create(settings.getId(), channelEnum, input.getAddress(), true, null);
+        log.info("Creation of activated {} channel", channel.getValue());
+        channelRepository.create(settings.getId(), channel, input.getAddress(), true, null);
       }
-      auditFacade.sendActivationAuditOnSuccess(channelEnum, input);
+      auditFacade.sendActivationAuditOnSuccess(channel, input);
     } catch (RuntimeException exception) {
-      auditFacade.sendActivationAuditOnFailure(channelEnum, input, exception.getMessage());
+      auditFacade.sendActivationAuditOnFailure(channel, input, exception.getMessage());
       throw exception;
     }
   }
 
   public void deactivateChannel(
       Channel channel, SettingsDeactivateChannelInputDto input, String accessToken) {
+
+    if (!userRoleVerifierService.verify(channel, accessToken)) {
+      auditFacade.sendDeactivationAuditOnFailure(channel, input, "User role verification failed");
+      throw new AccessDeniedException("Invalid user role for deactivate operation");
+    }
+
     var settings = getSettingsFromToken(accessToken);
     var notificationChannel =
         channelRepository.findBySettingsIdAndChannel(settings.getId(), channel);

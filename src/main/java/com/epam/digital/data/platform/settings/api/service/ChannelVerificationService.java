@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 EPAM Systems.
+ * Copyright 2023 EPAM Systems.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,5 @@ public interface ChannelVerificationService {
   VerificationCodeExpirationDto sendVerificationCode(
       Channel channel, VerificationInputDto input, String accessToken);
 
-
-    boolean verify(Channel channel, String accessToken, String verificationCode, String address);
+  boolean verify(Channel channel, String accessToken, String verificationCode, String address);
 }

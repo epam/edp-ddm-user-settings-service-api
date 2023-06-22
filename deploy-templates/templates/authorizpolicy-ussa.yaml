@@ -1,4 +1,4 @@
-{{- if or (not .Values.global.excludePortals) (not (has "citizen" .Values.global.excludePortals)) }}
+{{- if or (not .Values.global.excludePortals) (not (has "citizen" .Values.global.excludePortals)) (not (has "officer" .Values.global.excludePortals)) }}
 kind: AuthorizationPolicy
 apiVersion: security.istio.io/v1beta1
 metadata:

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 EPAM Systems.
+ * Copyright 2023 EPAM Systems.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,11 +43,18 @@ public class NotificationService {
     this.applicationName = applicationName;
   }
 
-  public void sendNotification(Channel channel, String address, String username, String otpCode) {
+  public void sendNotification(
+      Channel channel,
+      String address,
+      String username,
+      String otpCode,
+      Recipient.RecipientRealm realm) {
+
     List<Recipient> recipients = List.of(Recipient.builder()
         .id(username)
         .channels(List.of(getChannelObject(channel, address)))
         .parameters(Map.of("verificationCode", otpCode))
+        .realm(realm)
         .build());
 
     var notificationMessageDto = UserNotificationMessageDto

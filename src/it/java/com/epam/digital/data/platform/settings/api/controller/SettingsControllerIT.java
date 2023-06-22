@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 EPAM Systems.
+ * Copyright 2023 EPAM Systems.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,13 +66,15 @@ class SettingsControllerIT {
   private static final String EMAIL_1 = "settings@gmail.com";
   private static final UUID SETTINGS_ID_2 = UUID.fromString("7f18fd5f-d68e-4609-85a8-eb5745488ac2");
   private static final String EMAIL_2 = "settings2@yahoo.com";
+  private static final UUID SETTINGS_ID_3 = UUID.fromString("321e7654-e89b-12d3-a456-426655441112");
 
 
   private static final UUID SEARCHED_KEYCLOAK_ID =
-      UUID.fromString("4cb2fb36-df5a-474d-9e82-0a9848231bd6");
+      UUID.fromString("496fd2fd-3497-4391-9ead-41410522d06f");
 
-  private static String TOKEN;
-  private static String TOKEN_2;
+  private static String TOKEN_OFFICER;
+  private static String TOKEN_OFFICER_2;
+  private static String TOKEN_CITIZEN;
 
   @Autowired
   MockMvc mockMvc;
@@ -86,14 +88,15 @@ class SettingsControllerIT {
 
   @BeforeAll
   static void init() throws IOException {
-    TOKEN = readClassPathResource("/token.txt");
-    TOKEN_2 = readClassPathResource("/token2.txt");
+    TOKEN_OFFICER = readClassPathResource("/token_officer.txt");
+    TOKEN_OFFICER_2 = readClassPathResource("/token_officer2.txt");
+    TOKEN_CITIZEN = readClassPathResource("/token_citizen.txt");
   }
 
   @Test
   void shouldFindSettingsFromToken() throws Exception {
     mockMvc
-        .perform(get(BASE_URL + "/me").header(X_ACCESS_TOKEN.getHeaderName(), TOKEN))
+        .perform(get(BASE_URL + "/me").header(X_ACCESS_TOKEN.getHeaderName(), TOKEN_OFFICER))
         .andExpectAll(
             status().isOk(),
             content().contentType(MediaType.APPLICATION_JSON),
@@ -101,11 +104,7 @@ class SettingsControllerIT {
             jsonPath("$.channels[0].channel", is(Channel.EMAIL.getValue())),
             jsonPath("$.channels[0].activated", is(true)),
             jsonPath("$.channels[0].address", is(EMAIL_1)),
-            jsonPath("$.channels[0].deactivationReason").doesNotExist(),
-            jsonPath("$.channels[1].channel", is(Channel.DIIA.getValue())),
-            jsonPath("$.channels[1].activated", is(false)),
-            jsonPath("$.channels[1].address").doesNotExist(),
-            jsonPath("$.channels[1].deactivationReason", is("User deactivated")));
+            jsonPath("$.channels[0].deactivationReason").doesNotExist());
   }
 
   @Test
@@ -113,19 +112,19 @@ class SettingsControllerIT {
     mockMvc
         .perform(
             get(BASE_URL + "/" + SEARCHED_KEYCLOAK_ID)
-                .header(X_ACCESS_TOKEN.getHeaderName(), TOKEN))
+                .header(X_ACCESS_TOKEN.getHeaderName(), TOKEN_OFFICER))
         .andExpectAll(
             status().isOk(),
             content().contentType(MediaType.APPLICATION_JSON),
-            jsonPath("$.settingsId", is(SETTINGS_ID_2.toString())),
-            jsonPath("$.channels[0].channel", is(Channel.DIIA.getValue())),
+            jsonPath("$.settingsId", is(SETTINGS_ID_1.toString())),
+            jsonPath("$.channels[0].channel", is(Channel.EMAIL.getValue())),
             jsonPath("$.channels[0].activated", is(true)),
-            jsonPath("$.channels[0].address").doesNotExist(),
+            jsonPath("$.channels[0].address", is(EMAIL_1)),
             jsonPath("$.channels[0].deactivationReason").doesNotExist());
   }
 
   @Test
-  void shouldActivateEmailChannel() throws Exception {
+  void shouldActivateEmailChannelForOfficer() throws Exception {
     var input = new ActivateChannelInputDto();
     input.setAddress("new@email.com");
     input.setVerificationCode("123456");
@@ -136,7 +135,7 @@ class SettingsControllerIT {
 
     mockMvc
         .perform(post(BASE_URL + "/me/channels/email/activate")
-            .header(X_ACCESS_TOKEN.getHeaderName(), TOKEN)
+            .header(X_ACCESS_TOKEN.getHeaderName(), TOKEN_OFFICER)
             .content(objectMapper.writeValueAsString(input))
             .contentType(MediaType.APPLICATION_JSON))
         .andExpectAll(
@@ -154,9 +153,9 @@ class SettingsControllerIT {
   }
 
   @Test
-  void shouldActivateDiiaChannel() throws Exception {
+  void shouldActivateDiiaChannelForCitizen() throws Exception {
     var input = new ActivateChannelInputDto();
-    input.setAddress("1010101014");
+    input.setAddress("0101010101");
     input.setVerificationCode("123456");
     when(channelVerificationService.verify(any(Channel.class), anyString(), anyString(),
         anyString()))
@@ -164,38 +163,55 @@ class SettingsControllerIT {
     mockMvc
         .perform(
             post(BASE_URL + "/me/channels/diia/activate")
-                .header(X_ACCESS_TOKEN.getHeaderName(), TOKEN)
+                .header(X_ACCESS_TOKEN.getHeaderName(), TOKEN_CITIZEN)
                 .content(objectMapper.writeValueAsString(input))
                 .contentType(MediaType.APPLICATION_JSON))
         .andExpectAll(status().isOk());
 
     var activatedChannel =
-        notificationChannelRepository.findBySettingsIdAndChannel(SETTINGS_ID_1, Channel.DIIA).get();
+        notificationChannelRepository.findBySettingsIdAndChannel(SETTINGS_ID_3, Channel.DIIA).get();
 
-    assertThat(activatedChannel.getSettingsId()).isEqualTo(SETTINGS_ID_1);
+    assertThat(activatedChannel.getSettingsId()).isEqualTo(SETTINGS_ID_3);
     assertThat(activatedChannel.getChannel()).isEqualTo(Channel.DIIA);
-    assertThat(activatedChannel.getAddress()).isEqualTo("1010101014");
+    assertThat(activatedChannel.getAddress()).isEqualTo("0101010101");
     assertThat(activatedChannel.isActivated()).isTrue();
     assertThat(activatedChannel.getDeactivationReason()).isNull();
   }
 
   @Test
-  void shouldDeactivateChannel() throws Exception {
+  void forbiddenActivateDiiaChannelForOfficer() throws Exception {
+    var input = new ActivateChannelInputDto();
+    input.setAddress("1010101014");
+    input.setVerificationCode("123456");
+    when(channelVerificationService.verify(any(Channel.class), anyString(), anyString(),
+            anyString()))
+            .thenReturn(true);
+    mockMvc
+            .perform(
+                    post(BASE_URL + "/me/channels/diia/activate")
+                            .header(X_ACCESS_TOKEN.getHeaderName(), TOKEN_OFFICER)
+                            .content(objectMapper.writeValueAsString(input))
+                            .contentType(MediaType.APPLICATION_JSON))
+            .andExpectAll(status().isForbidden());
+  }
+
+  @Test
+  void shouldDeactivateChannelForCitizen() throws Exception {
     var input = new SettingsDeactivateChannelInputDto();
     input.setDeactivationReason("User deactivated");
 
     mockMvc
         .perform(
             post(BASE_URL + "/me/channels/diia/deactivate")
-                .header(X_ACCESS_TOKEN.getHeaderName(), TOKEN)
+                .header(X_ACCESS_TOKEN.getHeaderName(), TOKEN_CITIZEN)
                 .content(objectMapper.writeValueAsString(input))
                 .contentType(MediaType.APPLICATION_JSON))
         .andExpectAll(status().isOk());
 
     var deactivatedChannel =
-        notificationChannelRepository.findBySettingsIdAndChannel(SETTINGS_ID_1, Channel.DIIA).get();
+        notificationChannelRepository.findBySettingsIdAndChannel(SETTINGS_ID_3, Channel.DIIA).get();
 
-    assertThat(deactivatedChannel.getSettingsId()).isEqualTo(SETTINGS_ID_1);
+    assertThat(deactivatedChannel.getSettingsId()).isEqualTo(SETTINGS_ID_3);
     assertThat(deactivatedChannel.getChannel()).isEqualTo(Channel.DIIA);
     assertThat(deactivatedChannel.getAddress()).isNull();
     assertThat(deactivatedChannel.isActivated()).isFalse();
@@ -203,7 +219,21 @@ class SettingsControllerIT {
   }
 
   @Test
-  void shouldDeactivateChannelWithUpdatedAddress() throws Exception {
+  void forbiddenDeactivateChannelForOfficer() throws Exception {
+    var input = new SettingsDeactivateChannelInputDto();
+    input.setDeactivationReason("User deactivated");
+
+    mockMvc
+            .perform(
+                    post(BASE_URL + "/me/channels/diia/deactivate")
+                            .header(X_ACCESS_TOKEN.getHeaderName(), TOKEN_OFFICER)
+                            .content(objectMapper.writeValueAsString(input))
+                            .contentType(MediaType.APPLICATION_JSON))
+            .andExpectAll(status().isForbidden());
+  }
+
+  @Test
+  void shouldDeactivateChannelWithUpdatedAddressForOfficer() throws Exception {
     var input = new SettingsDeactivateChannelInputDto();
     input.setAddress(EMAIL_2);
     input.setDeactivationReason("User deactivated");
@@ -211,7 +241,7 @@ class SettingsControllerIT {
     mockMvc
             .perform(
                     post(BASE_URL + "/me/channels/email/deactivate")
-                            .header(X_ACCESS_TOKEN.getHeaderName(), TOKEN)
+                            .header(X_ACCESS_TOKEN.getHeaderName(), TOKEN_OFFICER)
                             .content(objectMapper.writeValueAsString(input))
                             .contentType(MediaType.APPLICATION_JSON))
             .andExpectAll(status().isOk());
@@ -227,7 +257,7 @@ class SettingsControllerIT {
   }
 
   @Test
-  void shouldCreateDeactivatedChannel() throws Exception {
+  void shouldCreateDeactivatedChannelForOfficer() throws Exception {
     var input = new SettingsDeactivateChannelInputDto();
     input.setDeactivationReason("Address deactivated");
     input.setAddress(EMAIL_2);
@@ -235,7 +265,7 @@ class SettingsControllerIT {
     mockMvc
         .perform(
             post(BASE_URL + "/me/channels/email/deactivate")
-                .header(X_ACCESS_TOKEN.getHeaderName(), TOKEN_2)
+                .header(X_ACCESS_TOKEN.getHeaderName(), TOKEN_OFFICER_2)
                 .content(objectMapper.writeValueAsString(input))
                 .contentType(MediaType.APPLICATION_JSON))
         .andExpectAll(status().isOk());
@@ -253,14 +283,14 @@ class SettingsControllerIT {
   }
 
   @Test
-  void shouldFailEmailAddressValidationWhenAddressIsEmpty() throws Exception {
+  void shouldFailEmailAddressValidationWhenAddressIsEmptyForOfficer() throws Exception {
     var input = new SettingsEmailInputDto();
     input.setAddress("");
 
     mockMvc
         .perform(
             post(BASE_URL + "/me/channels/email/validate")
-                .header(X_ACCESS_TOKEN.getHeaderName(), TOKEN)
+                .header(X_ACCESS_TOKEN.getHeaderName(), TOKEN_OFFICER)
                 .content(objectMapper.writeValueAsString(input))
                 .contentType(MediaType.APPLICATION_JSON))
         .andExpectAll(status().isUnprocessableEntity(),

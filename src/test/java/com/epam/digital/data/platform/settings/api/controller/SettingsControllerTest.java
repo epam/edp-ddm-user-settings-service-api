@@ -1,5 +1,5 @@
 /*
- *  Copyright 2021 EPAM Systems.
+ *  Copyright 2023 EPAM Systems.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -141,7 +141,7 @@ class SettingsControllerTest {
             status().isOk());
 
     var captor = ArgumentCaptor.forClass(ActivateChannelInputDto.class);
-    verify(settingsActivationService).activateChannel(captor.capture(), eq("email"), eq(TOKEN));
+    verify(settingsActivationService).activateChannel(captor.capture(), eq(Channel.EMAIL), eq(TOKEN));
     assertThat(captor.getValue().getAddress()).isEqualTo(EMAIL);
   }
 
@@ -159,7 +159,7 @@ class SettingsControllerTest {
         .andExpectAll(status().isOk());
 
     var captor = ArgumentCaptor.forClass(ActivateChannelInputDto.class);
-    verify(settingsActivationService).activateChannel(captor.capture(), eq("diia"), eq(TOKEN));
+    verify(settingsActivationService).activateChannel(captor.capture(), eq(Channel.DIIA), eq(TOKEN));
     var capturedPayload = captor.getValue();
     assertThat(capturedPayload.getAddress()).isEqualTo(payload.getAddress());
     assertThat(capturedPayload.getVerificationCode()).isEqualTo(payload.getVerificationCode());
