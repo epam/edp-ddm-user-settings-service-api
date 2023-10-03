@@ -20,5 +20,10 @@ This service provides web api and interacts with the database for processing acc
 
 Application starts by default on port 8001, to get familiar with available endpoints - visit swagger (`localhost:8001/openapi`).
 
+### Test execution
+
+* Tests could be run via maven command:
+    * `mvn verify` OR using appropriate functions of your IDE. To avoid `The filename or extension is too long` error on Windows, please uncomment `<fork>false</fork>` in `spring-boot-maven-plugin` configuration.
+
 ### License
 user-settings-service-api is Open Source software released under the Apache 2.0 license.

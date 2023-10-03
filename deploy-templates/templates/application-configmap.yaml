@@ -1,4 +1,3 @@
-{{- if or (not .Values.global.excludePortals) (not (has "citizen" .Values.global.excludePortals)) (not (has "officer" .Values.global.excludePortals)) }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -48,4 +47,3 @@ data:
     verification:
       otp:
         time-to-live: {{ .Values.verification.otp.timeToLive }}
-{{- end }}

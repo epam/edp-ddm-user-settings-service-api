@@ -30,6 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.epam.digital.data.platform.settings.api.UserSettingsServiceApiApplication;
 import com.epam.digital.data.platform.settings.api.config.TestBeansConfig;
 import com.epam.digital.data.platform.settings.api.service.ChannelVerificationService;
 import com.epam.digital.data.platform.settings.api.service.SettingsActivationService;
@@ -63,7 +64,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @WebMvcTest
 @TestPropertySource(properties = {"platform.security.enabled=false"})
 @Import({TestBeansConfig.class, PermitAllWebSecurityConfig.class})
-@ContextConfiguration
+@ContextConfiguration(classes = UserSettingsServiceApiApplication.class)
 class SettingsControllerTest {
 
   private static final String BASE_URL = "/api/settings";

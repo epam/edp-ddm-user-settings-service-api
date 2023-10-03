@@ -1,4 +1,3 @@
-{{- if or (not .Values.global.excludePortals) (not (has "citizen" .Values.global.excludePortals)) (not (has "officer" .Values.global.excludePortals)) }}
 kind: RequestAuthentication
 apiVersion: security.istio.io/v1beta1
 metadata:
@@ -9,7 +8,6 @@ spec:
     matchLabels:
       app: {{ .Values.name }}
   jwtRules:
-    {{- if not (has "citizen" .Values.global.excludePortals) }}
     - forwardOriginalToken: true
       fromHeaders:
         - name: X-Access-Token
@@ -22,8 +20,6 @@ spec:
       issuer: {{ template "custom-issuer.citizen" . }}
       jwksUri: {{ template "jwksUri.citizen" . }}
     {{- end }}
-    {{- end }}
-    {{- if not (has "officer" .Values.global.excludePortals) }}
     - forwardOriginalToken: true
       fromHeaders:
         - name: X-Access-Token
@@ -36,5 +32,3 @@ spec:
       issuer: {{ template "custom-issuer.officer" . }}
       jwksUri: {{ template "jwksUri.officer" . }}
     {{- end }}
-    {{- end }}
-{{- end }}

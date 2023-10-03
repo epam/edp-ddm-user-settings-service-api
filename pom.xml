@@ -14,7 +14,6 @@
 		<model.version>1.8.0.6</model.version>
 		<ddm.starter.logger2.version>1.6.0.5</ddm.starter.logger2.version>
 		<ddm.starter.actuator.version>1.6.0.3</ddm.starter.actuator.version>
-		<ddm.starter.swagger.version>1.6.0.1</ddm.starter.swagger.version>
 		<ddm.starter.audit.version>1.8.0.1</ddm.starter.audit.version>
 		<ddm.starter.security.version>1.6.0.14</ddm.starter.security.version>
 		<log4j.version>2.17.0</log4j.version>
@@ -34,6 +33,7 @@
 		<embedded.database.version>2.1.1</embedded.database.version>
 		<spring-security-core.version>5.8.3</spring-security-core.version>
 		<postgresql.version>42.3.3</postgresql.version>
+		<springdoc.openapi.ui.version>1.6.9</springdoc.openapi.ui.version>
 		<sonar.coverage.exclusions>
 			**/model/**/*,
 			**/config/**/*,
@@ -87,11 +87,6 @@
 			<groupId>com.epam.digital.data.platform</groupId>
 			<artifactId>ddm-starter-actuator</artifactId>
 			<version>${ddm.starter.actuator.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>com.epam.digital.data.platform</groupId>
-			<artifactId>ddm-starter-swagger</artifactId>
-			<version>${ddm.starter.swagger.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.epam.digital.data.platform</groupId>
@@ -199,6 +194,11 @@
 			<artifactId>lombok</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-ui</artifactId>
+			<version>${springdoc.openapi.ui.version}</version>
+		</dependency>
+		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
@@ -292,6 +292,28 @@
 							<goal>repackage</goal>
 						</goals>
 					</execution>
+					<execution>
+						<id>pre-integration-test</id>
+						<goals>
+							<goal>start</goal>
+						</goals>
+						<configuration>
+<!--          <fork>false</fork> Fixes Windows issue: The filename or extension is too long-->
+							<useTestClasspath>true</useTestClasspath>
+							<directories>${project.build.testOutputDirectory}</directories>
+							<mainClass>com.epam.digital.data.platform.settings.api.TestApp</mainClass>
+							<jvmArguments>-Dspring.profiles.active=test
+								-Ddata-platform.kafka.enabled=false
+								-Dmanagement.health.kafka.enabled=false
+							</jvmArguments>
+						</configuration>
+					</execution>
+					<execution>
+						<id>post-integration-test</id>
+						<goals>
+							<goal>stop</goal>
+						</goals>
+					</execution>
 				</executions>
 			</plugin>
 			<plugin>
@@ -307,6 +329,24 @@
 						<goals>
 							<goal>makeAggregateBom</goal>
 						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.springdoc</groupId>
+				<artifactId>springdoc-openapi-maven-plugin</artifactId>
+				<version>1.4</version>
+				<executions>
+					<execution>
+						<phase>integration-test</phase>
+						<goals>
+							<goal>generate</goal>
+						</goals>
+						<configuration>
+							<apiDocsUrl>http://localhost:8080/v3/api-docs.yaml</apiDocsUrl>
+							<outputFileName>swagger.yml</outputFileName>
+							<outputDir>openapi</outputDir>
+						</configuration>
 					</execution>
 				</executions>
 			</plugin>

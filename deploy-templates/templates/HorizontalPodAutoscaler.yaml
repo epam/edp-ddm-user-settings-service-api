@@ -1,5 +1,4 @@
-{{- if or (not .Values.global.excludePortals) (not (has "citizen" .Values.global.excludePortals)) (not (has "officer" .Values.global.excludePortals)) }}
-{{- if not .Values.global.disableRequestsLimits }}
+{{- if .Values.global.registry.userSettingsServiceApi.hpa.enabled }}
 kind: HorizontalPodAutoscaler
 apiVersion: {{ include "horizontalPodAutoscaler.apiVersion" . }}
 metadata:
@@ -12,8 +11,8 @@ spec:
     kind: Deployment
     name: {{ .Values.name }}-deployment
     apiVersion: apps/v1
-  minReplicas: 1
-  maxReplicas: 3
+  minReplicas: {{ .Values.global.registry.userSettingsServiceApi.hpa.minReplicas }}
+  maxReplicas: {{ .Values.global.registry.userSettingsServiceApi.hpa.maxReplicas }}
   metrics:
     - type: Resource
       resource:
@@ -21,5 +20,4 @@ spec:
         target:
           type: Utilization
           averageUtilization: 60
-{{- end }}
 {{- end }}

@@ -37,3 +37,8 @@ audit:
 verification:
   otp:
     time-to-live: 60
+
+platform:
+  security:
+    whitelist:
+      - /v3/api-docs.yaml
